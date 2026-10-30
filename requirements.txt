@@ -1,0 +1,3 @@
+﻿open-payments-sdk @ git+https://github.com/interledger/open-payments-python-sdk.git@101ff9223eb8f0ad012def749b5bea747325b99a
+python-dotenv>=1.0
+httpx>=0.27
