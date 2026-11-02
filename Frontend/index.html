@@ -1,343 +1,1078 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Spaza Koka | Shop Dashboard</title>
+  <title>SpazaKhokha | AI-Powered Shop Dashboard & Spaza Uniti</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
+  <!-- Sidebar Navigation -->
   <aside class="sidebar">
     <div class="brand">
-      <img src="assets/logo.jpeg" alt="Spaza Koka logo">
+      <img src="assets/logo.jpeg" alt="SpazaKhokha logo">
+      <div class="brand-unit-badge">
+        <span class="unit-id">Unit #104</span>
+        <span class="unit-network">Spaza Uniti Node</span>
+        <span id="sidebarBroadcastBadge" class="card-pill live-pill" style="font-size: 0.65rem; margin-top: 4px; display: inline-flex; align-items: center; gap: 4px;">● Live on Uniti</span>
+      </div>
     </div>
+
 
     <nav>
-      <a href="#" class="nav-link active">Dashboard</a>
-      <a href="#" class="nav-link">Customers</a>
-      <a href="#" class="nav-link">Credit Tabs</a>
-      <a href="#" class="nav-link">Payments</a>
-      <a href="#" class="nav-link">Transactions</a>
+      <a href="#" class="nav-link active" data-page="Dashboard">
+        <svg class="ui-icon" viewBox="0 0 24 24">
+          <rect width="7" height="9" x="3" y="3" rx="1" />
+          <rect width="7" height="5" x="14" y="3" rx="1" />
+          <rect width="7" height="9" x="14" y="12" rx="1" />
+          <rect width="7" height="5" x="3" y="16" rx="1" />
+        </svg> Dashboard
+      </a>
+      <a href="#" class="nav-link" data-page="Customers">
+        <svg class="ui-icon" viewBox="0 0 24 24">
+          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+          <circle cx="9" cy="7" r="4" />
+          <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+          <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+        </svg> Customers
+      </a>
+      <a href="#" class="nav-link" data-page="Credit Tabs">
+        <svg class="ui-icon" viewBox="0 0 24 24">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+          <polyline points="14 2 14 8 20 8" />
+          <line x1="16" x2="8" y1="13" y2="13" />
+          <line x1="16" x2="8" y1="17" y2="17" />
+        </svg> Credit Tabs
+      </a>
+      <a href="#" class="nav-link" data-page="Repayments">
+        <svg class="ui-icon" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="10" />
+          <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8" />
+          <line x1="12" x2="12" y1="6" y2="18" />
+        </svg> Repayments
+      </a>
+      <a href="#" class="nav-link" data-page="Unit Offerings">
+        <svg class="ui-icon" viewBox="0 0 24 24">
+          <path d="m20.59 13.41-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+          <line x1="7" x2="7.01" y1="7" y2="7" />
+        </svg> Spaza Uniti Offerings
+      </a>
     </nav>
 
-    <p class="sidebar-footer">Simple shopping. Smarter payments.</p>
+    <div class="wallet-badge">
+      <span class="wallet-label">Open Payments Address</span>
+      <code class="wallet-pointer" id="walletPointerDisplay">$ilp.rafiki.money/unit-104</code>
+      <span class="network-badge">Interledger Enabled</span>
+    </div>
+
+    <p class="sidebar-footer">SpazaKhokha x Spaza Uniti<br><small>Agentic Commerce for Township Economy</small></p>
   </aside>
 
+  <!-- Main Content -->
   <main class="main-content">
+    <!-- Topbar -->
     <header class="topbar">
       <div>
-        <p class="eyebrow">SPAZA KOKA / OVERVIEW</p>
-        <h1>Shop dashboard</h1>
-        <p class="muted">Welcome back, Shopkeeper.</p>
+        <p class="eyebrow">SPAZA UNITI NODE #104 / MEADOWLANDS</p>
+        <h1 id="pageTitle">Shop dashboard</h1>
+        <p class="muted">Welcome back, Baba Zola. Your AI Agent is active and managing your Unit.</p>
       </div>
-      <button class="primary-btn" id="addCustomerBtn">
-        + Add customer
-      </button>
+      <div class="topbar-actions">
+        <button class="agent-trigger-btn" id="openAgentModalBtn" title="Talk to AI Store Agent">
+
+          <span class="btn-text">AI Co-Pilot</span>
+          <span class="agent-badge-pulse">Online</span>
+        </button>
+        <button class="primary-btn" id="addCustomerBtn">
+          + Add customer
+        </button>
+      </div>
     </header>
 
-    <section class="summary-grid">
-      <article class="summary-card">
-        <p>Today's sales</p>
-        <h2 id="sales">R0.00</h2>
-        <span>All recorded sales</span>
-      </article>
+    <!-- Global Toast / Status Notification -->
+    <div id="toastNotification" class="toast-notification" hidden role="status" aria-live="polite">
+      <span class="toast-icon" id="toastIcon"><svg class="ui-icon ui-icon-md" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="10" />
+          <line x1="12" x2="12" y1="16" y2="12" />
+          <line x1="12" x2="12.01" y1="8" y2="8" />
+        </svg></span>
+      <span class="toast-text" id="toastText"></span>
+      <button class="toast-close" id="toastCloseBtn">&times;</button>
+    </div>
 
-      <article class="summary-card">
-        <p>Outstanding tabs</p>
-        <h2 id="outstanding">R0.00</h2>
-        <span>Credit still owed</span>
-      </article>
+    <p id="message" role="status" aria-live="polite" class="legacy-message"></p>
 
-      <article class="summary-card">
-        <p>Customers</p>
-        <h2 id="customers">0</h2>
-        <span>Registered customers</span>
-      </article>
-    </section>
+    <!-- AI Agent Quick Voice Command Bar (Zero-UI Banner) -->
+    <section class="agent-quick-bar" id="agentQuickBar">
+      <div class="quick-bar-content">
+        <div class="quick-bar-header">
+          <div class="ai-avatar">
+            <svg class="ui-icon ui-icon-md" viewBox="0 0 24 24">
+              <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+              <line x1="12" x2="12" y1="19" y2="22" />
+            </svg>
+          </div>
+          <div>
+            <strong>Mkhulu AI Co-Pilot</strong>
+            <p class="muted-small">Speak or type naturally. e.g. <em>"Sipho took 2 brown bread on credit, R34"</em> or
+              <em>"Thabo paid R50 via Open Payments"</em>
+            </p>
+          </div>
+        </div>
 
-    <section class="quick-actions">
-      <div class="section-heading">
-        <div>
-          <p class="eyebrow">GET THINGS DONE</p>
-          <h2>Quick actions</h2>
+        <form id="quickVoiceForm" class="quick-input-form">
+          <div class="voice-input-wrapper">
+            <input type="text" id="quickCommandInput" placeholder="Tell Mkhulu what happened at the counter..."
+              autocomplete="off">
+            <button type="button" class="mic-btn" id="quickMicBtn" title="Speak to Agent">
+              <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24">
+                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                <line x1="12" x2="12" y1="19" y2="22" />
+              </svg>
+              <span class="mic-pulse-ring"></span>
+            </button>
+          </div>
+          <button type="button" class="voice-sim-btn" id="openVoiceSimBtn" title="Test with Township Voice Notes">
+            <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24" style="fill: currentColor;">
+              <polygon points="5 3 19 12 5 21 5 3" />
+            </svg>
+            Simulate Voice
+          </button>
+          <button type="submit" class="agent-send-btn" id="quickSendBtn">
+            Process with Agent
+          </button>
+        </form>
+
+        <!-- Live Counter AI Response Banner -->
+        <div class="quick-agent-response-area" id="quickAgentResponseArea" hidden>
+          <div class="quick-response-avatar">
+            <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24">
+              <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+              <line x1="12" x2="12" y1="19" y2="22" />
+            </svg>
+          </div>
+          <div class="quick-response-body">
+            <div class="quick-response-meta">
+              <strong>Mkhulu AI Co-Pilot</strong>
+              <span class="quick-response-badge" id="quickResponseBadge">Live</span>
+            </div>
+            <div class="quick-response-text" id="quickResponseText"></div>
+          </div>
+        </div>
+
+        <div class="quick-prompts">
+          <span class="prompt-label">Quick actions:</span>
+          <button class="prompt-chip" data-command="Sipho took 2 Albany bread and 2L Stoney on credit, R52">
+            "Sipho took 2 bread & 2L Stoney on credit, R52"
+          </button>
+          <button class="prompt-chip" data-command="Record R50 repayment from Sipho via Open Payments">
+            "Record R50 repayment from Sipho"
+          </button>
+          <button class="prompt-chip" data-command="Launch a weekend 15% discount on Maize Meal for Spaza Uniti">
+            "Launch 15% discount on Maize Meal"
+          </button>
+          <button class="prompt-chip" data-command="Setup bread stamp card: buy 9 loaves get 1 free">
+            "Setup loyalty stamp card: buy 9 get 1 free"
+          </button>
         </div>
       </div>
-
-      <div class="action-grid">
-        <button class="action-card" id="purchaseBtn">
-          <span class="action-icon">＋</span>
-          <strong>Record purchase</strong>
-          <span>Add a sale or credit purchase</span>
-        </button>
-
-        <button class="action-card" id="repaymentBtn">
-          <span class="action-icon">↗</span>
-          <strong>Record repayment</strong>
-          <span>Update a customer's tab</span>
-        </button>
-
-        <button class="action-card" id="viewCustomersBtn">
-          <span class="action-icon">◎</span>
-          <strong>View customers</strong>
-          <span>Find a customer account</span>
-        </button>
-      </div>
     </section>
 
-    <section class="transactions">
+    <!-- DASHBOARD VIEW -->
+    <section id="dashboardPage" class="page-section">
+      <div class="summary-grid">
+        <article class="summary-card">
+          <div class="card-meta">
+            <p>Today's sales</p>
+            <span class="card-trend positive">+14% vs yesterday</span>
+          </div>
+          <h2 id="sales">R0.00</h2>
+          <span>All recorded counter & digital sales</span>
+        </article>
+
+        <article class="summary-card highlight-card">
+          <div class="card-meta">
+            <p>Outstanding tabs</p>
+            <span class="card-pill">Credit ledger</span>
+          </div>
+          <h2 id="outstanding">R0.00</h2>
+          <span id="tabCountLabel">0 customers owing</span>
+        </article>
+
+        <article class="summary-card">
+          <div class="card-meta">
+            <p>Spaza Uniti Shoppers</p>
+            <span class="card-pill uniti-pill">Connected</span>
+          </div>
+          <h2 id="customers">0</h2>
+          <span>Registered township patrons</span>
+        </article>
+
+        <article class="summary-card offerings-summary-card">
+          <div class="card-meta">
+            <p>Active Uniti Offerings</p>
+            <span class="card-pill live-pill">Live Now</span>
+          </div>
+          <h2 id="activeOfferingsCount">2</h2>
+          <span>1 Promo broadcast • 1 Loyalty Program</span>
+        </article>
+      </div>
+
+      <!-- Quick Actions Grid -->
+      <section class="quick-actions">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">FAST COUNTER ACTIONS</p>
+            <h2>Instant workflows</h2>
+          </div>
+        </div>
+
+        <div class="action-grid">
+          <button class="action-card" id="purchaseBtn">
+            <span class="action-icon">
+              <svg class="ui-icon ui-icon-lg" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" x2="12" y1="8" y2="16" />
+                <line x1="8" x2="16" y1="12" y2="12" />
+              </svg>
+            </span>
+            <strong>Record credit purchase</strong>
+            <span>Log items taken on customer tab</span>
+          </button>
+
+          <button class="action-card" id="repaymentBtn">
+            <span class="action-icon">
+              <svg class="ui-icon ui-icon-lg" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8" />
+                <line x1="12" x2="12" y1="6" y2="18" />
+              </svg>
+            </span>
+            <strong>Record repayment</strong>
+            <span>Cash or Open Payments tab settlement</span>
+          </button>
+
+          <button class="action-card" id="openPaymentsQRBtn">
+            <span class="action-icon">
+              <svg class="ui-icon ui-icon-lg" viewBox="0 0 24 24">
+                <rect width="5" height="5" x="3" y="3" rx="1" />
+                <rect width="5" height="5" x="16" y="3" rx="1" />
+                <rect width="5" height="5" x="3" y="16" rx="1" />
+                <path d="M21 16h-3a2 2 0 0 0-2 2v3" />
+                <path d="M21 21v.01" />
+                <path d="M12 7v3a2 2 0 0 1-2 2H7" />
+                <path d="M3 12h.01" />
+                <path d="M12 3h.01" />
+                <path d="M12 16v.01" />
+                <path d="M16 12h1" />
+                <path d="M21 12v.01" />
+                <path d="M12 21v-1" />
+              </svg>
+            </span>
+            <strong>Open Payments QR</strong>
+            <span>Generate instant ILP payment code</span>
+          </button>
+
+          <button class="action-card" id="viewOfferingsBtn">
+            <span class="action-icon">
+              <svg class="ui-icon ui-icon-lg" viewBox="0 0 24 24">
+                <polygon
+                  points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+              </svg>
+            </span>
+            <strong>Manage Uniti Offerings</strong>
+            <span>Promotions & customer loyalty rules</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- Recent Transactions Section -->
+      <section class="transactions">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">STORE ACTIVITY & AUDIT LOG</p>
+            <h2>Recent transactions</h2>
+          </div>
+          <span class="badge-tag">Auto-reconciled by Agent</span>
+        </div>
+
+        <div class="customer-table-wrap">
+          <table class="customer-table" id="transactionsTable">
+            <thead>
+              <tr>
+                <th>Type</th>
+                <th>Customer</th>
+                <th>Details</th>
+                <th>Amount</th>
+                <th>Method</th>
+                <th>Source</th>
+                <th>Date & Time</th>
+              </tr>
+            </thead>
+            <tbody id="transactionsList"></tbody>
+          </table>
+          <div class="empty-state" id="transactionsEmpty">
+            <div class="empty-icon">
+              <svg class="ui-icon ui-icon-xl" viewBox="0 0 24 24">
+                <path d="m16 3 4 4-4 4" />
+                <path d="M20 7H4" />
+                <path d="m8 21-4-4 4-4" />
+                <path d="M4 17h16" />
+              </svg>
+            </div>
+            <h3>Your transactions will appear here</h3>
+            <p>Counter purchases, repayments, and Open Payments transfers will be automatically recorded here.</p>
+          </div>
+        </div>
+      </section>
+    </section>
+
+    <!-- CUSTOMERS VIEW -->
+    <section id="customersPage" class="page-section" hidden>
       <div class="section-heading">
         <div>
-          <p class="eyebrow">SHOP ACTIVITY</p>
-          <h2>Recent transactions</h2>
+          <p class="eyebrow">CUSTOMER DIRECTORY</p>
+          <h2>Township Patrons & Credit Accounts</h2>
+          <p class="muted">Manage customer tabs, loyalty cards, and contact details.</p>
         </div>
-        <span class="muted">Demo preview</span>
-      </div>
-
-      <div class="empty-state">
-        <div class="empty-icon">↔</div>
-        <h3>Your transactions will appear here</h3>
-        <p>Purchases and repayments will be listed here when recorded.</p>
-      </div>
-    </section>
-
-    <p id="message" role="status" aria-live="polite"></p>
-
-
-<!-- Customer Management -->
-<section id="customersPage" class="page-section" hidden>
-  <div class="section-heading">
-    <div>
-      <p class="eyebrow">CUSTOMER MANAGEMENT</p>
-      <h2>Customers</h2>
-      <p class="muted">Manage your shop's customer accounts.</p>
-    </div>
-    <button class="primary-btn" id="newCustomerBtn">
-      + Add customer
-    </button>
-  </div>
-
-  <div class="customer-toolbar">
-    <input
-      type="search"
-      id="customerSearch"
-      placeholder="Search by name or customer ID..."
-      aria-label="Search customers"
-    >
-  </div>
-
-  <div id="customerFormContainer" hidden>
-    <form id="customerForm" class="customer-form">
-      <h3>Register a customer</h3>
-
-      <label for="customerName">Full name</label>
-      <input id="customerName" name="name"
-        type="text" required maxlength="100">
-
-      <label for="customerPhone">Phone number</label>
-      <input id="customerPhone" name="phone"
-        type="tel" required maxlength="20"
-        placeholder="e.g. 071 234 5678">
-
-      <div class="form-actions">
-        <button class="primary-btn" type="submit">
-          Register customer
-        </button>
-        <button class="secondary-btn" type="button"
-          id="cancelCustomerBtn">
-          Cancel
+        <button class="primary-btn" id="newCustomerBtn">
+          + Add customer
         </button>
       </div>
-    </form>
-  </div>
-
-  <div class="customer-table-wrap">
-    <table class="customer-table">
-      <thead>
-        <tr>
-          <th>Customer ID</th>
-          <th>Name</th>
-          <th>Phone</th>
-          <th>Outstanding tab</th>
-        </tr>
-      </thead>
-      <tbody id="customerList"></tbody>
-    </table>
-    <p id="customerEmpty" class="empty-message">
-      No customers registered yet. Add your first customer.
-    </p>
-  </div>
-</section>
-
-
-
-<!-- Credit Tabs -->
-<section id="creditTabsPage" class="page-section" hidden>
-  <div class="section-heading">
-    <div>
-      <p class="eyebrow">CUSTOMER CREDIT</p>
-      <h2>Credit tabs</h2>
-      <p class="muted">Record purchases and track money owed.</p>
-    </div>
-  </div>
-
-  <div class="summary-grid tab-summary">
-    <article class="summary-card">
-      <p>Total outstanding</p>
-      <h2 id="totalOutstanding">R0.00</h2>
-      <span>Across all customer tabs</span>
-    </article>
-
-    <article class="summary-card">
-      <p>Customers with tabs</p>
-      <h2 id="customersWithTabs">0</h2>
-      <span>Customers owing money</span>
-    </article>
-  </div>
-
-  <div class="tab-layout">
-    <form id="purchaseForm" class="customer-form">
-      <h3>Record a credit purchase</h3>
-
-      <label for="purchaseCustomer">Select customer</label>
-      <select id="purchaseCustomer" required>
-        <option value="">Choose a customer</option>
-      </select>
-
-      <label for="purchaseDescription">What did they buy?</label>
-      <input
-        id="purchaseDescription"
-        type="text"
-        placeholder="e.g. Bread, milk and eggs"
-        maxlength="200"
-        required
-      >
-
-      <label for="purchaseAmount">Purchase amount (R)</label>
-      <input
-        id="purchaseAmount"
-        type="number"
-        min="0.01"
-        max="1000000"
-        step="0.01"
-        placeholder="0.00"
-        required
-      >
-
-      <div class="form-actions">
-        <button type="submit" class="primary-btn">
-          Record purchase
-        </button>
-      </div>
-
-      <p class="muted">
-        Demo only: recording a purchase increases the customer's tab.
-      </p>
-    </form>
-
-    <div class="tab-history">
-      <h3>Credit purchase history</h3>
 
       <div class="customer-toolbar">
-        <input
-          id="tabSearch"
-          type="search"
-          placeholder="Search customer or item..."
-          aria-label="Search credit purchases"
-        >
+        <input type="search" id="customerSearch" placeholder="Search customer by name, phone or ID (e.g. Sipho)..."
+          aria-label="Search customers">
+      </div>
+
+      <div id="customerFormContainer" hidden>
+        <form id="customerForm" class="customer-form">
+          <h3>Register a new customer account</h3>
+
+          <div class="form-row">
+            <div>
+              <label for="customerName">Full name</label>
+              <input id="customerName" name="name" type="text" required maxlength="100"
+                placeholder="e.g. Sipho Dlamini">
+            </div>
+            <div>
+              <label for="customerPhone">Phone number (WhatsApp)</label>
+              <input id="customerPhone" name="phone" type="tel" required maxlength="20" placeholder="e.g. 082 123 4567">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div>
+              <label for="customerCreditLimit">Credit Limit (R)</label>
+              <input id="customerCreditLimit" name="limit" type="number" min="50" max="5000" step="10" value="300"
+                placeholder="300">
+            </div>
+            <div>
+              <label for="customerNotes">Customer note (optional)</label>
+              <input id="customerNotes" name="notes" type="text" placeholder="e.g. House 412, trusted neighbor">
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button class="primary-btn" type="submit">
+              Register customer
+            </button>
+            <button class="secondary-btn" type="button" id="cancelCustomerBtn">
+              Cancel
+            </button>
+          </div>
+        </form>
       </div>
 
       <div class="customer-table-wrap">
         <table class="customer-table">
           <thead>
             <tr>
-              <th>Customer</th>
-              <th>Item / description</th>
-              <th>Amount</th>
-              <th>Date</th>
+              <th>Customer ID</th>
+              <th>Name</th>
+              <th>Phone</th>
+              <th>Outstanding Tab</th>
+              <th>Credit Limit</th>
+              <th>Loyalty Stamps</th>
+              <th>Quick Action</th>
             </tr>
           </thead>
-          <tbody id="purchaseList"></tbody>
+          <tbody id="customerList"></tbody>
         </table>
-
-        <p id="purchaseEmpty" class="empty-message">
-          No credit purchases recorded yet.
+        <p id="customerEmpty" class="empty-message" hidden>
+          No customers registered yet. Add your first customer.
         </p>
       </div>
-    </div>
-  </div>
-</section>
+    </section>
 
-
-
-<section id="repaymentsPage" class="page-section" hidden>
-  <div class="section-heading">
-    <div>
-      <p class="eyebrow">PAYMENT MANAGEMENT</p>
-      <h2>Repayments</h2>
-      <p class="muted">Record payments made by customers towards their credit tabs.</p>
-    </div>
-  </div>
-
-  <div class="customer-form repayment-form">
-    <h3>Record a repayment</h3>
-
-    <form id="repaymentForm">
-      <label for="repaymentCustomer">Customer</label>
-      <select id="repaymentCustomer" required>
-        <option value="">Select a customer</option>
-      </select>
-
-      <div class="balance-display">
-        <span>Outstanding balance</span>
-        <strong id="repaymentBalance">R0.00</strong>
+    <!-- CREDIT TABS VIEW -->
+    <section id="creditTabsPage" class="page-section" hidden>
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">INFORMAL CREDIT LEDGER</p>
+          <h2>Credit tabs & purchases</h2>
+          <p class="muted">Record counter credit sales and track customer obligations.</p>
+        </div>
       </div>
 
-      <label for="repaymentAmount">Amount paid (R)</label>
-      <input
-        id="repaymentAmount"
-        type="number"
-        min="0.01"
-        step="0.01"
-        required
-        placeholder="e.g. 100.00"
-      >
+      <div class="summary-grid tab-summary">
+        <article class="summary-card">
+          <p>Total outstanding</p>
+          <h2 id="totalOutstanding">R0.00</h2>
+          <span>Across all active customer tabs</span>
+        </article>
 
-      <label for="repaymentNote">Payment note (optional)</label>
-      <input
-        id="repaymentNote"
-        type="text"
-        maxlength="150"
-        placeholder="e.g. Cash payment"
-      >
-
-      <div class="form-actions">
-        <button class="primary-btn" type="submit">Record repayment</button>
+        <article class="summary-card">
+          <p>Customers with tabs</p>
+          <h2 id="customersWithTabs">0</h2>
+          <span>Customers currently owing balance</span>
+        </article>
       </div>
-    </form>
-  </div>
 
-  <div class="customer-table-wrap">
-    <h3>Recent repayments</h3>
-    <table class="customer-table">
-      <thead>
-        <tr>
-          <th>Reference</th>
-          <th>Customer</th>
-          <th>Amount paid</th>
-          <th>Date</th>
-          <th>Note</th>
-        </tr>
-      </thead>
-      <tbody id="repaymentList"></tbody>
-    </table>
-    <p id="repaymentEmpty" class="empty-message">
-      No repayments recorded yet.
-    </p>
-  </div>
-</section>
+      <div class="tab-layout">
+        <form id="purchaseForm" class="customer-form">
+          <h3>Record a credit purchase</h3>
+
+          <label for="purchaseCustomer">Select customer</label>
+          <select id="purchaseCustomer" required>
+            <option value="">Choose a customer</option>
+          </select>
+
+          <label for="purchaseDescription">Items purchased</label>
+          <input id="purchaseDescription" type="text" placeholder="e.g. 2 Albany White, 2L Coca Cola, 1 Sunlight"
+            maxlength="200" required>
+
+          <label for="purchaseAmount">Purchase amount (R)</label>
+          <input id="purchaseAmount" type="number" min="0.01" max="1000000" step="0.01" placeholder="0.00" required>
+
+          <div class="form-actions">
+            <button type="submit" class="primary-btn">
+              Record purchase on tab
+            </button>
+          </div>
+
+          <p class="muted-small">
+            <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24" style="color: #d97706; vertical-align: -2px;">
+              <path d="M9 18h6" />
+              <path d="M10 22h4" />
+              <path
+                d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14" />
+            </svg>
+            <strong>Agent Tip:</strong> You can also just say <em>"Sipho took bread and milk, R45"</em> in the AI bar
+            above!
+          </p>
+        </form>
+
+        <div class="tab-history">
+          <h3>Credit purchase history</h3>
+
+          <div class="customer-toolbar">
+            <input id="tabSearch" type="search" placeholder="Search customer, item or reference..."
+              aria-label="Search credit purchases">
+          </div>
+
+          <div class="customer-table-wrap">
+            <table class="customer-table">
+              <thead>
+                <tr>
+                  <th>Customer</th>
+                  <th>Item / Description</th>
+                  <th>Amount</th>
+                  <th>Date & Time</th>
+                </tr>
+              </thead>
+              <tbody id="purchaseList"></tbody>
+            </table>
+
+            <p id="purchaseEmpty" class="empty-message" hidden>
+              No credit purchases recorded yet.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- REPAYMENTS VIEW -->
+    <section id="repaymentsPage" class="page-section" hidden>
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">TAB SETTLEMENT</p>
+          <h2>Record Repayment</h2>
+          <p class="muted">Accept cash or instant Open Payments Interledger settlements toward credit tabs.</p>
+        </div>
+      </div>
+
+      <div class="tab-layout">
+        <div class="customer-form repayment-form">
+          <h3>Log a customer payment</h3>
+
+          <form id="repaymentForm">
+            <label for="repaymentCustomer">Customer</label>
+            <select id="repaymentCustomer" required>
+              <option value="">Select customer owing tab</option>
+            </select>
+
+            <div class="balance-display">
+              <span>Current outstanding tab:</span>
+              <strong id="repaymentBalance">R0.00</strong>
+            </div>
+
+            <label for="repaymentAmount">Amount paid (R)</label>
+            <input id="repaymentAmount" type="number" min="0.01" step="0.01" required placeholder="e.g. 50.00">
+
+            <label for="repaymentMethod">Payment Method</label>
+            <select id="repaymentMethod">
+              <option value="Cash">Cash at counter</option>
+              <option value="Open Payments">Open Payments (Interledger / Digital)</option>
+              <option value="Instant EFT">Instant EFT / Bank Transfer</option>
+            </select>
+
+            <label for="repaymentNote">Payment note (optional)</label>
+            <input id="repaymentNote" type="text" maxlength="150" placeholder="e.g. Paid in full / Part payment">
+
+            <div class="form-actions">
+              <button class="primary-btn" type="submit">Record repayment</button>
+              <button class="secondary-btn" type="button" id="triggerOpenPaymentsRepaymentBtn">
+                <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24">
+                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                </svg>
+                Request via Open Payments QR
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <div class="customer-table-wrap">
+          <h3>Recent repayments ledger</h3>
+          <table class="customer-table">
+            <thead>
+              <tr>
+                <th>Reference</th>
+                <th>Customer</th>
+                <th>Amount paid</th>
+                <th>Method</th>
+                <th>Date & Time</th>
+                <th>Note</th>
+              </tr>
+            </thead>
+            <tbody id="repaymentList"></tbody>
+          </table>
+          <p id="repaymentEmpty" class="empty-message" hidden>
+            No repayments recorded yet.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SPAZA UNITI OFFERINGS VIEW (PROMOTIONS & LOYALTY) -->
+    <section id="offeringsPage" class="page-section" hidden>
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">SPAZA UNITI ECOSYSTEM</p>
+          <h2>Unit #104 Offerings & Community Discovery</h2>
+          <p class="muted">Promotions and loyalty programs published to local shoppers on the Spaza Uniti platform.</p>
+        </div>
+        <button class="primary-btn" id="newPromoBtn">
+          + Launch Promotion
+        </button>
+      </div>
+
+      <div class="uniti-banner">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+          <div>
+            <div class="uniti-badge">
+              <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="2" x2="22" y1="12" y2="12" />
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+              </svg>
+              Spaza Uniti Network Node
+            </div>
+            <p style="margin-top: 6px;">Your shop is discoverable by customers within their selected radius. When broadcast is active, your specials, bread loyalty club, and gigs are live on the customer Uniti app.</p>
+          </div>
+          <div class="broadcast-control-box">
+            <div class="broadcast-toggle-wrap">
+              <span id="broadcastToggleLabel" class="broadcast-state-text">Broadcast: <strong>ACTIVE</strong></span>
+              <label class="switch-toggle" title="Toggle broadcast to Spaza Uniti network">
+                <input type="checkbox" id="unitiBroadcastSwitch" checked>
+                <span class="slider round"></span>
+              </label>
+            </div>
+            <span id="broadcastSubtext" class="muted-small" style="display: block; margin-top: 4px; font-size: 0.72rem;">Visible to shoppers nearby</span>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- Add Promotion Form Drawer -->
+      <div id="promoFormContainer" hidden>
+        <form id="promoForm" class="customer-form">
+          <h3>Create a New Promotion for Spaza Uniti</h3>
+          <div class="form-row">
+            <div>
+              <label for="promoTitle">Promotion Title</label>
+              <input id="promoTitle" type="text" required placeholder="e.g. Weekend Albany Superior Special">
+            </div>
+            <div>
+              <label for="promoCategory">Category</label>
+              <select id="promoCategory">
+                <option value="Bakery">Bakery & Bread</option>
+                <option value="Staples">Staples & Maize</option>
+                <option value="Beverages">Beverages & Cold Drinks</option>
+                <option value="Dairy">Dairy & Milk</option>
+                <option value="Snacks">Snacks & Sweets</option>
+                <option value="Household">Household & Cleaning</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div>
+              <label for="promoOriginalPrice">Normal Price (R)</label>
+              <input id="promoOriginalPrice" type="number" step="0.50" min="1" placeholder="19.00">
+            </div>
+            <div>
+              <label for="promoDiscountPrice">Special / Promo Price (R)</label>
+              <input id="promoDiscountPrice" type="number" step="0.50" min="1" required placeholder="16.00">
+            </div>
+            <div>
+              <label for="promoDays">Duration (Days)</label>
+              <input id="promoDays" type="number" min="1" max="30" value="3">
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button class="primary-btn" type="submit">Broadcast to Spaza Uniti</button>
+            <button class="secondary-btn" type="button" id="cancelPromoBtn">Cancel</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Active Offerings Grid -->
+      <div class="offerings-grid">
+        <!-- Promotions Column -->
+        <div class="offerings-column">
+          <div class="column-header">
+            <h3>Active Promotions & Discounts</h3>
+            <span class="badge-count" id="promoCountBadge">1 active</span>
+          </div>
+          <div id="promotionsContainer" class="promo-cards-list">
+            <!-- Dynamic promotion cards injected here -->
+          </div>
+        </div>
+
+        <!-- Loyalty Program Column -->
+        <div class="offerings-column">
+          <div class="column-header">
+            <h3>Spaza Uniti Loyalty Program</h3>
+            <span class="badge-tag live-badge">Active Reward</span>
+          </div>
+
+          <div class="loyalty-card" id="activeLoyaltyCard">
+            <div class="loyalty-header">
+              <div>
+                <span class="loyalty-type">DIGITAL STAMP CARD</span>
+                <h4 id="loyaltyTitle">Daily Bread Stamp Club</h4>
+              </div>
+              <span class="stamp-icon">
+                <svg class="ui-icon ui-icon-xl" viewBox="0 0 24 24" style="stroke: #d97706;">
+                  <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
+                  <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
+                  <path d="M4 22h16" />
+                  <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" />
+                  <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" />
+                  <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" />
+                </svg>
+              </span>
+            </div>
+            <p id="loyaltyRule" class="loyalty-desc">Buy 9 loaves of Albany bread, get the 10th loaf FREE! Tracked
+              automatically on Spaza Uniti.</p>
+
+            <div class="stamps-visualizer" id="stampsDemo">
+              <span class="stamp-dot active" title="Stamp 1"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"
+                  style="stroke-width: 3;">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg></span>
+              <span class="stamp-dot active" title="Stamp 2"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"
+                  style="stroke-width: 3;">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg></span>
+              <span class="stamp-dot active" title="Stamp 3"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"
+                  style="stroke-width: 3;">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg></span>
+              <span class="stamp-dot active" title="Stamp 4"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"
+                  style="stroke-width: 3;">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg></span>
+              <span class="stamp-dot active" title="Stamp 5"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"
+                  style="stroke-width: 3;">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg></span>
+              <span class="stamp-dot active" title="Stamp 6"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"
+                  style="stroke-width: 3;">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg></span>
+              <span class="stamp-dot" title="Stamp 7">7</span>
+              <span class="stamp-dot" title="Stamp 8">8</span>
+              <span class="stamp-dot" title="Stamp 9">9</span>
+              <span class="stamp-dot reward" title="Free Reward!">
+                <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24" style="stroke: #d97706;">
+                  <rect x="3" y="8" width="18" height="4" rx="1" />
+                  <path d="M12 8v13" />
+                  <path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7" />
+                  <path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 4.8 0 0 1 12 8a4.8 4.8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5" />
+                </svg>
+              </span>
+            </div>
+            <div class="loyalty-footer">
+              <span class="muted-small">Configured by AI Co-Pilot • Auto-credited on checkout</span>
+              <button class="secondary-btn btn-sm" id="editLoyaltyBtn">Adjust rules</button>
+            </div>
+          </div>
+
+          <!-- Customer Discovery Preview -->
+          <div class="customer-preview-box">
+            <h4>
+              <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24">
+                <rect width="14" height="20" x="5" y="2" rx="2" ry="2" />
+                <line x1="12" x2="12.01" y1="18" y2="18" />
+              </svg>
+              Customer App Preview (Spaza Uniti)
+            </h4>
+            <p class="muted-small">How township shoppers see Unit #104 in their radius:</p>
+            <div class="preview-card">
+              <div class="preview-unit-header">
+                <strong>Unit #104 — Mama Zola Spaza</strong>
+                <span class="distance-pill">
+                  <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24">
+                    <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+                    <circle cx="12" cy="10" r="3" />
+                  </svg>
+                  350m away
+                </span>
+              </div>
+              <p class="preview-text">"Meadowlands Zone 2 • Accepts Open Payments & ILP Wallets"</p>
+              <div class="preview-chips">
+                <span class="preview-chip">
+                  <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24">
+                    <path d="m20.59 13.41-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+                  </svg>
+                  15% off Albany Bread
+                </span>
+                <span class="preview-chip">
+                  <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24">
+                    <rect x="3" y="8" width="18" height="4" rx="1" />
+                    <path d="M12 8v13" />
+                    <path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7" />
+                  </svg>
+                  Bread Stamp Club
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
 
   </main>
 
+  <!-- AI CO-PILOT FULL DIALOG MODAL -->
+  <div class="agent-modal-backdrop" id="agentModalBackdrop" hidden>
+    <div class="agent-modal">
+      <div class="agent-modal-header">
+        <div class="agent-title-info">
+          <div class="agent-modal-avatar">
+            <svg class="ui-icon ui-icon-md" viewBox="0 0 24 24" style="stroke: white;">
+              <path
+                d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z" />
+            </svg>
+          </div>
+          <div>
+            <h3>Mkhulu AI Store Partner</h3>
+            <span class="agent-subtitle">Township Commerce Co-Pilot • Powered by Agentic LLM</span>
+          </div>
+        </div>
+        <button class="modal-close-btn" id="closeAgentModalBtn">&times;</button>
+      </div>
+
+      <div class="agent-modal-body">
+        <div class="agent-chat-feed" id="agentChatFeed">
+          <div class="agent-msg bot">
+            <div class="msg-bubble">
+              Sawubona Baba! I am your SpazaKhokha AI Co-Pilot. You don't need to navigate menus or type forms. Just
+              tell me what happened at the counter, or ask me to manage your Spaza Uniti promotions.
+            </div>
+            <div class="msg-time">Just now</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="agent-modal-footer">
+        <div class="agent-modal-input-wrap">
+          <input type="text" id="agentModalInput" placeholder="Type or click the mic to speak..." autocomplete="off">
+          <button type="button" class="voice-sim-btn-inline" id="modalVoiceSimBtn" title="Simulate Voice Note">
+            <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24" style="fill: currentColor;">
+              <polygon points="5 3 19 12 5 21 5 3" />
+            </svg>
+            Simulate Voice
+          </button>
+          <button type="button" class="mic-btn modal-mic" id="modalMicBtn" title="Speak to Agent">
+            <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24">
+              <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+              <line x1="12" x2="12" y1="19" y2="22" />
+            </svg>
+          </button>
+          <button type="button" class="primary-btn btn-icon" id="modalSendBtn">
+            Send →
+          </button>
+        </div>
+        <div class="mic-status-label" id="micStatusLabel" hidden>
+          <span class="recording-indicator"></span> Listening to your voice... Speak now.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OPEN PAYMENTS INTERLEDGER QR MODAL -->
+  <div class="op-modal-backdrop" id="openPaymentsModal" hidden>
+    <div class="op-modal">
+      <div class="op-modal-header">
+        <div class="op-modal-title">
+          <span class="op-icon">
+            <svg class="ui-icon ui-icon-lg" viewBox="0 0 24 24"
+              style="color: var(--amber); stroke: #d97706; fill: #fde68a;">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+            </svg>
+          </span>
+          <div>
+            <h3>Open Payments / Interledger</h3>
+            <p class="muted-small">Instant Digital Settlement</p>
+          </div>
+        </div>
+        <button class="modal-close-btn" id="closeOpModalBtn">&times;</button>
+      </div>
+
+      <div class="op-modal-body">
+        <div class="op-qr-wrapper">
+          <svg class="op-qr-svg" id="opQrSvg" viewBox="0 0 160 160" width="160" height="160">
+            <!-- Simulated QR code pattern with central ILP symbol -->
+            <rect width="160" height="160" fill="#ffffff" rx="8" />
+            <!-- Corner marker 1 -->
+            <rect x="15" y="15" width="35" height="35" fill="#243124" rx="4" />
+            <rect x="22" y="22" width="21" height="21" fill="#ffffff" rx="2" />
+            <rect x="27" y="27" width="11" height="11" fill="#243124" />
+            <!-- Corner marker 2 -->
+            <rect x="110" y="15" width="35" height="35" fill="#243124" rx="4" />
+            <rect x="117" y="22" width="21" height="21" fill="#ffffff" rx="2" />
+            <rect x="122" y="27" width="11" height="11" fill="#243124" />
+            <!-- Corner marker 3 -->
+            <rect x="15" y="110" width="35" height="35" fill="#243124" rx="4" />
+            <rect x="22" y="117" width="21" height="21" fill="#ffffff" rx="2" />
+            <rect x="27" y="122" width="11" height="11" fill="#243124" />
+            <!-- Data dots -->
+            <rect x="60" y="20" width="8" height="8" fill="#4c6549" />
+            <rect x="75" y="20" width="8" height="8" fill="#243124" />
+            <rect x="90" y="30" width="8" height="8" fill="#4c6549" />
+            <rect x="60" y="45" width="8" height="8" fill="#243124" />
+            <rect x="75" y="55" width="8" height="8" fill="#4c6549" />
+            <rect x="90" y="55" width="8" height="8" fill="#243124" />
+            <rect x="25" y="65" width="8" height="8" fill="#243124" />
+            <rect x="40" y="75" width="8" height="8" fill="#4c6549" />
+            <rect x="20" y="90" width="8" height="8" fill="#243124" />
+            <rect x="115" y="65" width="8" height="8" fill="#4c6549" />
+            <rect x="130" y="75" width="8" height="8" fill="#243124" />
+            <rect x="120" y="95" width="8" height="8" fill="#4c6549" />
+            <rect x="60" y="115" width="8" height="8" fill="#243124" />
+            <rect x="80" y="125" width="8" height="8" fill="#4c6549" />
+            <rect x="100" y="115" width="8" height="8" fill="#243124" />
+            <rect x="125" y="130" width="8" height="8" fill="#4c6549" />
+            <!-- Center ILP badge -->
+            <circle cx="80" cy="80" r="18" fill="#243124" />
+            <text x="80" y="86" text-anchor="middle" fill="#ffffff" font-size="12" font-weight="bold">ILP</text>
+          </svg>
+        </div>
+
+        <div class="op-details">
+          <div class="op-detail-row">
+            <span class="muted-small">Receiver Address:</span>
+            <code id="opModalPointer">$ilp.rafiki.money/unit-104</code>
+          </div>
+          <div class="op-detail-row">
+            <span class="muted-small">Requested Amount:</span>
+            <strong id="opModalAmount">R50.00 ZAR</strong>
+          </div>
+          <div class="op-detail-row">
+            <span class="muted-small">Customer / Purpose:</span>
+            <span id="opModalCustomer">Sipho Dlamini (Tab Repayment)</span>
+          </div>
+        </div>
+
+        <div class="simulation-banner">
+          <p><strong>Township Customer Experience:</strong> Customer scans with their mobile ILP wallet or taps on their
+            phone.</p>
+          <button class="primary-btn btn-full" id="simulateCustomerPaymentBtn">
+            <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+            </svg>
+            Simulate Customer ILP Transfer Now
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOWNSHIP VOICE NOTE SIMULATOR MODAL -->
+  <div class="voice-sim-modal-backdrop" id="voiceSimModal" hidden>
+    <div class="voice-sim-modal">
+      <div class="voice-sim-header">
+        <div class="voice-sim-title">
+          <span class="sim-pulse-dot"></span>
+          <div>
+            <h3>Township Voice Note Simulator</h3>
+            <p class="muted-small">Simulate WhatsApp / counter voice memos to test Mkhulu AI Co-Pilot</p>
+          </div>
+        </div>
+        <button class="modal-close-btn" id="closeVoiceSimBtn">&times;</button>
+      </div>
+
+      <div class="voice-sim-body">
+        <div class="voice-sim-banner">
+          <svg class="ui-icon ui-icon-md" viewBox="0 0 24 24" style="color: var(--forest); flex-shrink: 0;">
+            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+            <line x1="12" x2="12" y1="19" y2="22" />
+          </svg>
+          <p class="muted-small" style="margin: 0;">
+            <strong>Testing without microphone hardware or browser permissions?</strong> Click any township voice
+            scenario below. Mkhulu will simulate voice note playback, transcribe the audio, and execute the ledger tool
+            call with live sound effects.
+          </p>
+        </div>
+
+        <div class="voice-sim-grid">
+          <button type="button" class="voice-sim-card"
+            data-memo="Sipho took 2 Albany bread and 2L Stoney on credit, R52">
+            <div class="voice-sim-card-top">
+              <span class="sim-tag credit-tag">Credit Purchase</span>
+              <span class="sim-duration">0:04</span>
+            </div>
+            <p class="sim-quote">"Sipho took 2 Albany bread and 2L Stoney on credit, R52"</p>
+            <div class="sim-action-row">
+              <span class="play-btn-circle"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"
+                  style="fill: white; stroke: white;">
+                  <polygon points="5 3 19 12 5 21 5 3" />
+                </svg></span>
+              <span class="sim-action-label">Play & Execute Tool</span>
+            </div>
+          </button>
+
+          <button type="button" class="voice-sim-card" data-memo="Record R50 repayment from Sipho via Open Payments">
+            <div class="voice-sim-card-top">
+              <span class="sim-tag payment-tag">Open Payments Repayment</span>
+              <span class="sim-duration">0:03</span>
+            </div>
+            <p class="sim-quote">"Record R50 repayment from Sipho via Open Payments"</p>
+            <div class="sim-action-row">
+              <span class="play-btn-circle"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"
+                  style="fill: white; stroke: white;">
+                  <polygon points="5 3 19 12 5 21 5 3" />
+                </svg></span>
+              <span class="sim-action-label">Play & Execute Tool</span>
+            </div>
+          </button>
+
+          <button type="button" class="voice-sim-card"
+            data-memo="Launch a weekend 15% discount on Maize Meal for Spaza Uniti">
+            <div class="voice-sim-card-top">
+              <span class="sim-tag promo-tag">Spaza Uniti Offering</span>
+              <span class="sim-duration">0:05</span>
+            </div>
+            <p class="sim-quote">"Launch a weekend 15% discount on Maize Meal for Spaza Uniti"</p>
+            <div class="sim-action-row">
+              <span class="play-btn-circle"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"
+                  style="fill: white; stroke: white;">
+                  <polygon points="5 3 19 12 5 21 5 3" />
+                </svg></span>
+              <span class="sim-action-label">Play & Execute Tool</span>
+            </div>
+          </button>
+
+          <button type="button" class="voice-sim-card"
+            data-memo="Mama Thandi bought 2 loaf Albany White and 2L milk on credit, R48">
+            <div class="voice-sim-card-top">
+              <span class="sim-tag credit-tag">Credit Purchase</span>
+              <span class="sim-duration">0:04</span>
+            </div>
+            <p class="sim-quote">"Mama Thandi bought 2 loaf Albany White and 2L milk on credit, R48"</p>
+            <div class="sim-action-row">
+              <span class="play-btn-circle"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"
+                  style="fill: white; stroke: white;">
+                  <polygon points="5 3 19 12 5 21 5 3" />
+                </svg></span>
+              <span class="sim-action-label">Play & Execute Tool</span>
+            </div>
+          </button>
+
+          <button type="button" class="voice-sim-card" data-memo="Check Sipho Dlamini outstanding tab balance">
+            <div class="voice-sim-card-top">
+              <span class="sim-tag info-tag">Tab Balance Check</span>
+              <span class="sim-duration">0:03</span>
+            </div>
+            <p class="sim-quote">"Check Sipho Dlamini's outstanding tab balance"</p>
+            <div class="sim-action-row">
+              <span class="play-btn-circle"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"
+                  style="fill: white; stroke: white;">
+                  <polygon points="5 3 19 12 5 21 5 3" />
+                </svg></span>
+              <span class="sim-action-label">Play & Execute Tool</span>
+            </div>
+          </button>
+
+          <button type="button" class="voice-sim-card" data-memo="Setup bread stamp card: buy 9 loaves get 1 free">
+            <div class="voice-sim-card-top">
+              <span class="sim-tag loyalty-tag">Loyalty Stamp Rule</span>
+              <span class="sim-duration">0:04</span>
+            </div>
+            <p class="sim-quote">"Setup bread stamp card: buy 9 loaves get 1 free"</p>
+            <div class="sim-action-row">
+              <span class="play-btn-circle"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"
+                  style="fill: white; stroke: white;">
+                  <polygon points="5 3 19 12 5 21 5 3" />
+                </svg></span>
+              <span class="sim-action-label">Play & Execute Tool</span>
+            </div>
+          </button>
+        </div>
+
+        <div class="custom-voice-sim">
+          <label for="customVoiceMemoInput"><strong>Or simulate any custom speech / counter message:</strong></label>
+          <div class="custom-voice-row">
+            <input type="text" id="customVoiceMemoInput" placeholder="e.g. Bongani settled R45 on his tab with cash...">
+            <button type="button" class="primary-btn" id="simulateCustomVoiceBtn">
+              <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24" style="fill: currentColor;">
+                <polygon points="5 3 19 12 5 21 5 3" />
+              </svg>
+              Simulate
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="script.js"></script>
 </body>
+
 </html>
