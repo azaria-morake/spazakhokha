@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spaza Uniti — Township Commerce & Open Payments Network</title>
+  <meta name="description" content="Discover nearby township spaza shops, live specials, bread loyalty clubs, community gigs, and pay seamlessly via Open Payments.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Ambient glow backdrop -->
+  <div class="ambient-glow"></div>
+
+  <!-- Main App Shell -->
+  <div class="app-shell">
+    
+    <!-- Header Navigation -->
+    <header class="app-header">
+      <div class="header-inner">
+        <!-- Logo & Branding -->
+        <div class="brand-group" id="brandLogoHome" role="button" tabindex="0">
+          <div class="brand-logo-icon">
+            <span class="logo-symbol">⚡</span>
+          </div>
+          <div>
+            <h1 class="brand-title">SPAZA <span>UNITI</span></h1>
+            <p class="brand-sub">Township Commerce • Open Payments</p>
+          </div>
+        </div>
+
+        <!-- Township / Geolocation Dropdown -->
+        <div class="location-picker-box">
+          <svg class="icon-geo" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+            <circle cx="12" cy="10" r="3"></circle>
+          </svg>
+          <div class="location-select-wrap">
+            <label for="townshipSelect" class="sr-only">Select Township Location</label>
+            <select id="townshipSelect">
+              <option value="dobsonville" data-lat="-26.2234" data-lng="27.8681" selected>Dobsonville, Soweto</option>
+              <option value="meadowlands" data-lat="-26.2290" data-lng="27.8720">Meadowlands Zone 2</option>
+              <option value="orlando" data-lat="-26.2360" data-lng="27.9150">Orlando West (Vilakazi)</option>
+              <option value="diepkloof" data-lat="-26.2550" data-lng="27.9400">Diepkloof Zone 6</option>
+              <option value="zola" data-lat="-26.2420" data-lng="27.8380">Zola North</option>
+            </select>
+          </div>
+          <span class="live-dot" title="Live location active"></span>
+        </div>
+
+        <!-- Right User Actions / Wallet Pill -->
+        <div class="header-user-actions">
+          <!-- Customer Wallet Chip -->
+          <div class="wallet-pill" id="customerWalletBtn" role="button" tabindex="0" title="View Open Payments Wallet & Transactions">
+            <div class="user-avatar-tiny" id="userAvatarText">M</div>
+            <div class="wallet-pill-info">
+              <span class="user-handle" id="headerUserHandle">@mannini</span>
+              <span class="wallet-balance" id="headerWalletBalance">R 150.00</span>
+            </div>
+            <svg class="chevron-down" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </div>
+
+          <!-- Switch / Onboard Button -->
+          <button class="btn-ghost-sm" id="switchUserBtn" title="Switch or Register Customer">
+            <span>Switch / Sign Up</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Sub-Nav / Open Payments Status Banner -->
+    <div class="op-status-strip">
+      <div class="op-status-inner">
+        <div class="status-left">
+          <span class="op-badge">OPEN PAYMENTS</span>
+          <span class="op-handle-display" id="opFullPointerUri">$spazauniti.org/mannini</span>
+        </div>
+        <div class="status-right">
+          <span class="interledger-chip">
+            <span class="pulsing-green-dot"></span> Interledger ILP: Online
+          </span>
+          <button class="link-btn-sm" id="quickTopUpBtn">+ Receive / Top Up</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Views Container -->
+    <main class="main-content">
+
+      <!-- ====================================================================
+           VIEW 1: UNIT DISCOVERY FEED
+           ==================================================================== -->
+      <section id="viewDiscovery" class="page-view active">
+        <!-- Hero Section -->
+        <div class="discovery-hero">
+          <div class="hero-text-wrap">
+            <span class="eyebrow-pill">DISCOVER TOWNSHIP STORES NEARBY</span>
+            <h2>Support Local Spazas. Earn Free Bread. Pay with Open Payments.</h2>
+            <p>Explore verified Spaza Uniti shops within walking distance in Soweto. See real-time grocery specials, bread loyalty cards, and community jobs.</p>
+          </div>
+
+          <!-- Quick Discovery Search Bar -->
+          <div class="search-bar-wrap">
+            <div class="search-input-box">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+              <input type="text" id="unitSearchInput" placeholder="Search spaza name, owner, specials, or bread club..." autocomplete="off">
+              <button class="clear-search-btn" id="clearSearchBtn" hidden>&times;</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filter Controls Bar -->
+        <div class="filter-controls-bar">
+          <!-- Radius Filter Pills -->
+          <div class="radius-filter-group">
+            <span class="filter-label">Max Distance:</span>
+            <div class="pill-group" id="radiusPillGroup">
+              <button class="filter-pill" data-radius="0.5">&lt; 500m</button>
+              <button class="filter-pill" data-radius="1.0">&lt; 1 km</button>
+              <button class="filter-pill" data-radius="3.0">&lt; 3 km</button>
+              <button class="filter-pill active" data-radius="5.0">&lt; 5 km</button>
+              <button class="filter-pill" data-radius="all">All (10km)</button>
+            </div>
+          </div>
+
+          <!-- Feature Filter Pills -->
+          <div class="feature-filter-group">
+            <span class="filter-label">Filter:</span>
+            <div class="pill-group" id="featurePillGroup">
+              <button class="filter-pill active" data-feature="all">All Units</button>
+              <button class="filter-pill" data-feature="promos">🔥 Live Specials</button>
+              <button class="filter-pill" data-feature="loyalty">🍞 Bread Club</button>
+              <button class="filter-pill" data-feature="jobs">💼 Community Jobs</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Results Counter & Status -->
+        <div class="results-header">
+          <h3 id="discoveryCountHeader">Nearby Registered Spaza Units (4)</h3>
+          <span class="sort-indicator">Sorted by walking distance</span>
+        </div>
+
+        <!-- Dynamic Unit Cards Grid -->
+        <div class="units-grid" id="unitsGrid">
+          <!-- Rendered dynamically by app.js -->
+        </div>
+
+        <!-- Empty State -->
+        <div class="empty-state-card" id="emptyUnitsState" hidden>
+          <div class="empty-icon">📍</div>
+          <h3>No Spaza Units Found In This Radius</h3>
+          <p>Try widening your distance filter to 5km or selecting another township neighborhood.</p>
+          <button class="btn-primary-sm" id="resetRadiusBtn">Expand Radius to 5km</button>
+        </div>
+      </section>
+
+
+      <!-- ====================================================================
+           VIEW 2: STANDARDIZED INTERNAL UNIT STOREFRONT
+           (All registered Units share this identical, premium structure)
+           ==================================================================== -->
+      <section id="viewUnitDetail" class="page-view" hidden>
+        <!-- Back Navigation -->
+        <div class="back-nav-bar">
+          <button class="btn-back" id="backToDiscoveryBtn">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="19" y1="12" x2="5" y2="12"></line>
+              <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            <span>Back to Discovery Feed</span>
+          </button>
+          <div class="unit-detail-meta-pill" id="detailDistanceBadge">0.0 km away</div>
+        </div>
+
+        <!-- Standardized Unit Hero Banner -->
+        <div class="unit-hero-card">
+          <div class="unit-hero-top">
+            <div class="unit-hero-info">
+              <div class="unit-title-row">
+                <h2 id="detailUnitName">Mama Zola Spaza</h2>
+                <span class="status-badge-open" id="detailUnitStatus">● OPEN NOW</span>
+              </div>
+              <p class="unit-tagline" id="detailUnitTagline">Fresh Albany bread daily, cold refreshments & trusted credit tabs</p>
+              
+              <div class="unit-attributes-list">
+                <div class="attr-item">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                    <circle cx="12" cy="10" r="3"></circle>
+                  </svg>
+                  <span id="detailUnitAddress">Meadowlands Zone 2, Soweto</span>
+                </div>
+                <div class="attr-item">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                  </svg>
+                  <span id="detailUnitHours">06:30 - 20:00 Daily</span>
+                </div>
+                <div class="attr-item">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                  </svg>
+                  <span>Owner: <strong id="detailUnitOwner">Zola Mthethwa</strong></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Unit Open Payments Card & Quick Pay CTA -->
+            <div class="unit-hero-cta-box">
+              <div class="unit-op-card">
+                <span class="op-mini-label">MERCHANT OPEN PAYMENTS WALLET</span>
+                <span class="unit-op-id" id="detailUnitOpId">$spazauniti.org/unit-104</span>
+                <span class="op-verified-badge">✓ Verified Uniti Node</span>
+              </div>
+              <button class="btn-pay-hero" id="heroPayNowBtn">
+                <span class="pay-icon">⚡</span> Pay at Counter Now
+              </button>
+            </div>
+          </div>
+
+          <!-- Unit Standardized Tabs Header -->
+          <nav class="unit-tabs-nav" id="unitTabsNav">
+            <button class="unit-tab-btn active" data-tab="tabPromos">
+              <span>🔥 Live Specials</span>
+              <span class="tab-badge" id="tabBadgePromos">3</span>
+            </button>
+            <button class="unit-tab-btn" data-tab="tabLoyalty">
+              <span>🍞 Loyalty Stamp Card</span>
+              <span class="tab-badge green" id="tabBadgeLoyalty">Active</span>
+            </button>
+            <button class="unit-tab-btn" data-tab="tabJobs">
+              <span>💼 Community Jobs</span>
+              <span class="tab-badge gold" id="tabBadgeJobs">2</span>
+            </button>
+            <button class="unit-tab-btn" data-tab="tabPayment">
+              <span>💳 Open Payments Counter</span>
+            </button>
+          </nav>
+        </div>
+
+        <!-- ==================================================================
+             UNIT TAB CONTENT PANELS
+             ================================================================== -->
+        <div class="unit-tab-panels">
+
+          <!-- TAB 1: LIVE SPECIALS & PROMOTIONS -->
+          <div id="tabPromos" class="tab-panel active">
+            <div class="tab-header-row">
+              <div>
+                <h3>Broadcasted Specials & Discounts</h3>
+                <p class="text-muted">Live grocery promotions broadcasted directly from Mama Zola's counter inventory.</p>
+              </div>
+              <span class="broadcast-sync-indicator">● Synchronized live via Spaza Uniti node</span>
+            </div>
+
+            <div class="promos-grid" id="detailPromosGrid">
+              <!-- Rendered dynamically -->
+            </div>
+          </div>
+
+          <!-- TAB 2: LOYALTY STAMP CARD -->
+          <div id="tabLoyalty" class="tab-panel" hidden>
+            <div class="tab-header-row">
+              <div>
+                <h3>Township Loyalty Program</h3>
+                <p class="text-muted">Earn automated stamps whenever you buy bread or settle grocery tabs at this unit.</p>
+              </div>
+            </div>
+
+            <div class="loyalty-container-card">
+              <div class="loyalty-card-head">
+                <div class="loyalty-badge-group">
+                  <span class="loyalty-trophy-icon">🏆</span>
+                  <div>
+                    <h4 id="loyaltyTitle">Daily Bread Stamp Club</h4>
+                    <span class="loyalty-subtitle" id="loyaltyCustomerStatus">Tracked for @mannini</span>
+                  </div>
+                </div>
+                <div class="stamps-count-pill" id="loyaltyStampsCountPill">
+                  6 / 10 Stamps Collected
+                </div>
+              </div>
+
+              <!-- Interactive Stamp Visualizer -->
+              <div class="stamps-visualizer-grid" id="stampsVisualizer">
+                <!-- 10 stamp circles rendered dynamically -->
+              </div>
+
+              <!-- Reward Explanation -->
+              <div class="loyalty-reward-box">
+                <div class="reward-icon-box">🍞</div>
+                <div>
+                  <h5>Reward Milestone:</h5>
+                  <p id="loyaltyRewardDesc">Buy 9 loaves of Albany bread, get the 10th loaf FREE! Tracked automatically on Spaza Uniti.</p>
+                </div>
+              </div>
+
+              <div class="loyalty-footer-row">
+                <span class="muted-info">Stamps are automatically accredited to your @username during checkout.</span>
+                <button class="btn-secondary-sm" id="claimRewardBtn">Check Stamp Eligibility</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 3: COMMUNITY GIGS & JOBS -->
+          <div id="tabJobs" class="tab-panel" hidden>
+            <div class="tab-header-row">
+              <div>
+                <h3>Community Gigs & Township Jobs</h3>
+                <p class="text-muted">Earn extra income assisting with daily operations, morning deliveries, and inventory.</p>
+              </div>
+            </div>
+
+            <div class="jobs-list" id="detailJobsList">
+              <!-- Rendered dynamically -->
+            </div>
+          </div>
+
+          <!-- TAB 4: PAY AT COUNTER (OPEN PAYMENTS) -->
+          <div id="tabPayment" class="tab-panel" hidden>
+            <div class="tab-header-row">
+              <div>
+                <h3>Direct Counter Settlement</h3>
+                <p class="text-muted">Pay for groceries or settle your credit tab instantly using your Open Payments wallet.</p>
+              </div>
+            </div>
+
+            <div class="direct-pay-card">
+              <div class="pay-parties-strip">
+                <div class="party-box">
+                  <span class="party-label">Payer (You)</span>
+                  <span class="party-value" id="payPayerHandle">@mannini</span>
+                  <span class="party-sub" id="payPayerWallet">$spazauniti.org/mannini</span>
+                </div>
+                <div class="pay-arrow">➔</div>
+                <div class="party-box right">
+                  <span class="party-label">Recipient (Store)</span>
+                  <span class="party-value" id="payRecipientName">Mama Zola Spaza</span>
+                  <span class="party-sub" id="payRecipientWallet">$spazauniti.org/unit-104</span>
+                </div>
+              </div>
+
+              <form id="counterPayForm" class="counter-pay-form">
+                <div class="form-group">
+                  <label for="payAmountInput">Payment Amount (ZAR)</label>
+                  <div class="amount-input-box">
+                    <span class="currency-prefix">R</span>
+                    <input type="number" id="payAmountInput" step="0.50" min="1.00" max="1000.00" value="45.00" required>
+                  </div>
+                </div>
+
+                <!-- Quick Preset Pills -->
+                <div class="preset-amounts-row">
+                  <span class="preset-label">Quick Amounts:</span>
+                  <button type="button" class="preset-btn" data-amt="10">R10</button>
+                  <button type="button" class="preset-btn" data-amt="20">R20</button>
+                  <button type="button" class="preset-btn active" data-amt="45">R45</button>
+                  <button type="button" class="preset-btn" data-amt="80">R80</button>
+                  <button type="button" class="preset-btn" data-amt="150">R150</button>
+                </div>
+
+                <div class="form-group">
+                  <label for="payPurposeInput">Note / Purpose</label>
+                  <input type="text" id="payPurposeInput" value="Groceries (Albany Brown & Stoney)" placeholder="e.g. Tab settlement or grocery payment">
+                </div>
+
+                <div class="balance-check-note">
+                  <span>Available Balance: <strong id="payAvailableBalance">R 150.00</strong></span>
+                  <span id="balanceSufficientBadge" class="badge-sufficient">✓ Sufficient Balance</span>
+                </div>
+
+                <button type="submit" class="btn-execute-payment" id="executePaymentBtn">
+                  <span class="pay-bolt">⚡</span> Initiate Open Payments Checkout
+                </button>
+              </form>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <div class="footer-inner">
+        <p>&copy; 2026 Spaza Uniti — Township Unified Commerce & Open Payments Network.</p>
+        <p class="footer-links">Interledger Protocol • RFC Open Payments • Soweto Spaza Ecosystem</p>
+      </div>
+    </footer>
+  </div>
+
+
+  <!-- ======================================================================
+       MODAL 1: CUSTOMER ONBOARDING & SWITCHER MODAL
+       ====================================================================== -->
+  <div class="modal-backdrop" id="userModalBackdrop" hidden>
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <span class="modal-icon">👤</span>
+          <div>
+            <h3>Customer Identity & Wallet</h3>
+            <p class="modal-sub">Alphanumeric handle mapped to Open Payments</p>
+          </div>
+        </div>
+        <button class="modal-close" id="closeUserModalBtn">&times;</button>
+      </div>
+
+      <!-- Modal Tabs: Switch Demo User vs Register New Customer -->
+      <div class="modal-tab-strip">
+        <button class="modal-tab-btn active" id="tabBtnSwitchUser">Demo Customers</button>
+        <button class="modal-tab-btn" id="tabBtnRegisterUser">+ Register New Customer</button>
+      </div>
+
+      <div class="modal-body">
+        
+        <!-- Tab Content 1: Demo Switcher -->
+        <div id="modalPanelSwitch" class="modal-panel active">
+          <p class="panel-desc">Select an active customer to test tab repayments, balance debits, and loyalty stamp collection:</p>
+          
+          <div class="user-select-list" id="demoUsersList">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+
+        <!-- Tab Content 2: Register New Customer -->
+        <div id="modalPanelRegister" class="modal-panel" hidden>
+          <form id="registerCustomerForm" class="customer-registration-form">
+            <div class="form-group">
+              <label for="regFullName">Full Legal / Preferred Name</label>
+              <input type="text" id="regFullName" required placeholder="e.g. Kagiso Khumalo">
+            </div>
+
+            <div class="form-group">
+              <label for="regUsername">
+                Universal Username
+                <span class="label-hint">(Strictly alphanumeric, 3-20 characters)</span>
+              </label>
+              <div class="handle-input-wrap">
+                <span class="handle-prefix">@</span>
+                <input type="text" id="regUsername" required pattern="^[a-zA-Z0-9]{3,20}$" placeholder="kagiso99" autocomplete="off">
+              </div>
+              <div class="handle-validation-feedback" id="handleFeedback">
+                Enter 3-20 letters or numbers. No spaces or symbols.
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="regPin">
+                4-Digit Security PIN
+                <span class="label-hint">(Used for Option B counter checkout fallback)</span>
+              </label>
+              <input type="password" id="regPin" required pattern="^\d{4}$" maxlength="4" placeholder="••••" inputmode="numeric">
+              <span class="input-hint">Keeps your wallet secure when paying at the counter.</span>
+            </div>
+
+            <div class="form-group">
+              <label for="regDeposit">Initial Demo Deposit (ZAR)</label>
+              <input type="number" id="regDeposit" value="100.00" min="10" step="10">
+            </div>
+
+            <div class="op-pointer-preview-box">
+              <span class="preview-title">Your Generated Open Payments Address:</span>
+              <span class="preview-address" id="regAddressPreview">$spazauniti.org/username</span>
+            </div>
+
+            <button type="submit" class="btn-primary-block" id="submitRegisterBtn">
+              Create Universal Wallet & Sign Up
+            </button>
+          </form>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ======================================================================
+       MODAL 2: TWO-TIER OPEN PAYMENTS CONSENT ENGINE
+       (Option A: Interactive SMS/Push link, Option B: 4-digit PIN fallback)
+       ====================================================================== -->
+  <div class="modal-backdrop" id="consentModalBackdrop" hidden>
+    <div class="modal-card consent-modal">
+      <div class="modal-header warning-header">
+        <div class="modal-title-wrap">
+          <span class="modal-icon-shield">🛡️</span>
+          <div>
+            <h3>Authorization Required</h3>
+            <p class="modal-sub">Two-Tier Open Payments Consent Engine</p>
+          </div>
+        </div>
+        <button class="modal-close" id="closeConsentModalBtn">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        
+        <!-- Transaction Summary Box -->
+        <div class="consent-summary-card">
+          <div class="consent-amount-row">
+            <span class="consent-label">Debit Amount:</span>
+            <span class="consent-amount" id="consentAmountText">R 45.00</span>
+          </div>
+          <div class="consent-detail-row">
+            <span>Customer:</span>
+            <strong id="consentCustomerText">@mannini</strong>
+          </div>
+          <div class="consent-detail-row">
+            <span>Recipient:</span>
+            <strong id="consentRecipientText">Unit #104 — Mama Zola Spaza</strong>
+          </div>
+          <div class="consent-detail-row">
+            <span>Purpose:</span>
+            <span id="consentPurposeText">Groceries (Albany Brown & Stoney)</span>
+          </div>
+          <div class="consent-detail-row">
+            <span>Grant ID:</span>
+            <code class="grant-id-code" id="consentGrantIdText">grant-xyz</code>
+          </div>
+        </div>
+
+        <!-- The Two Consent Paths -->
+        <div class="consent-options-container">
+          
+          <!-- OPTION A: PRIMARY INTERACTIVE PUSH / SMS LINK -->
+          <div class="consent-tier-box active" id="tierOptionABox">
+            <div class="tier-badge-row">
+              <span class="tier-pill primary">OPTION A: PRIMARY CONSENT</span>
+              <span class="tier-status-text">📱 Interactive Push Link</span>
+            </div>
+            <p class="tier-desc">An interactive push authorization was simulated to the customer's phone. Tap below to simulate approving the interactive consent prompt:</p>
+            
+            <button class="btn-tier-action option-a-btn" id="btnApproveOptionA">
+              <span class="action-symbol">✓</span> Approve via Smartphone Prompt
+            </button>
+          </div>
+
+          <div class="or-separator">
+            <span>OR IF NETWORK DELAYED / SMS LATENCY</span>
+          </div>
+
+          <!-- OPTION B: FALLBACK 4-DIGIT SECURITY PIN ENTRY AT COUNTER -->
+          <div class="consent-tier-box" id="tierOptionBBox">
+            <div class="tier-badge-row">
+              <span class="tier-pill fallback">OPTION B: COUNTER PIN FALLBACK</span>
+              <span class="tier-status-text">🔢 4-Digit Security PIN</span>
+            </div>
+            <p class="tier-desc">If the customer has no cell coverage or SMS is taking too long at the counter, enter the customer's 4-digit PIN directly:</p>
+
+            <form id="pinFallbackForm" class="pin-fallback-form">
+              <div class="pin-input-group">
+                <input type="password" id="counterPinInput" maxlength="4" pattern="^\d{4}$" placeholder="••••" inputmode="numeric" required>
+                <button type="submit" class="btn-pin-submit" id="btnSubmitPin">
+                  Authorize with PIN
+                </button>
+              </div>
+              <div class="pin-error-feedback" id="pinErrorFeedback" hidden>
+                Incorrect security PIN. Please try again.
+              </div>
+            </form>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ======================================================================
+       MODAL 3: PAYMENT RECEIPT & CONFIRMATION
+       ====================================================================== -->
+  <div class="modal-backdrop" id="receiptModalBackdrop" hidden>
+    <div class="modal-card receipt-modal">
+      <div class="receipt-header">
+        <div class="receipt-success-badge">✓</div>
+        <h3>Payment Successful!</h3>
+        <p class="receipt-sub">Interledger Open Payments Settlement Complete</p>
+      </div>
+
+      <div class="modal-body">
+        <div class="receipt-bill-card">
+          <div class="receipt-row-main">
+            <span>Amount Paid:</span>
+            <span class="receipt-sum" id="receiptAmount">R 45.00</span>
+          </div>
+          <div class="receipt-divider"></div>
+          <div class="receipt-row">
+            <span>Paid To:</span>
+            <strong id="receiptStore">Mama Zola Spaza (Unit #104)</strong>
+          </div>
+          <div class="receipt-row">
+            <span>Debited From:</span>
+            <span id="receiptCustomer">@mannini</span>
+          </div>
+          <div class="receipt-row">
+            <span>Authorization Method:</span>
+            <span class="auth-method-chip" id="receiptAuthMethod">Option A (Interactive Push)</span>
+          </div>
+          <div class="receipt-row">
+            <span>New Wallet Balance:</span>
+            <strong id="receiptNewBalance">R 105.00</strong>
+          </div>
+          <div class="receipt-row">
+            <span>Transaction Ref:</span>
+            <code id="receiptTxnRef">TXN-OP-9812</code>
+          </div>
+        </div>
+
+        <button class="btn-primary-block" id="receiptDoneBtn">
+          Done & Return to Store
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ======================================================================
+       MODAL 4: TOP UP / RECEIVE FUNDS SIMULATOR
+       ====================================================================== -->
+  <div class="modal-backdrop" id="topUpModalBackdrop" hidden>
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <span class="modal-icon">💵</span>
+          <div>
+            <h3>Top Up Open Payments Wallet</h3>
+            <p class="modal-sub">Simulate incoming payment to your handle</p>
+          </div>
+        </div>
+        <button class="modal-close" id="closeTopUpModalBtn">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <form id="topUpForm" class="customer-registration-form">
+          <div class="form-group">
+            <label>Receiving Wallet Address</label>
+            <input type="text" id="topUpWalletPreview" readonly value="$spazauniti.org/mannini">
+          </div>
+
+          <div class="form-group">
+            <label for="topUpAmount">Amount to Receive (ZAR)</label>
+            <div class="amount-input-box">
+              <span class="currency-prefix">R</span>
+              <input type="number" id="topUpAmount" step="10" min="10" max="2000" value="100.00" required>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="topUpSource">Source / Purpose</label>
+            <input type="text" id="topUpSource" value="EFT / Family Remittance">
+          </div>
+
+          <button type="submit" class="btn-primary-block" id="submitTopUpBtn">
+            Simulate Incoming Transfer
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- Application Logic -->
+  <script src="app.js"></script>
+</body>
+</html>
