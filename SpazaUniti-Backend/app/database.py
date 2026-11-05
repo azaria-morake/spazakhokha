@@ -120,11 +120,39 @@ def init_db():
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_units_township ON units(township);")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_units_coords ON units(latitude, longitude);")
 
+    # 6. Customer Unit-Scoped Ubuntu Tokens Table
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS customer_tokens (
+        id TEXT PRIMARY KEY,
+        username TEXT NOT NULL,
+        unit_id TEXT NOT NULL,
+        ubu_balance REAL NOT NULL DEFAULT 0.0,
+        updated_at TEXT NOT NULL
+    );
+    """)
+    cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_cust_unit_tokens ON customer_tokens(username, unit_id);")
+
     # Pre-seed initial customers if directory is empty
     cursor.execute("SELECT COUNT(*) FROM customers")
     count = cursor.fetchone()[0]
     base_url = os.environ.get("SPAZA_UNITI_BASE_URL", "http://localhost:8001")
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    # Seed initial Ubuntu Tokens for demo customers if empty
+    cursor.execute("SELECT COUNT(*) FROM customer_tokens")
+    if cursor.fetchone()[0] == 0:
+        sample_tokens = [
+            ("tok_01", "mannini", "unit-104", 24.00, now), # 24 UBU: eligible for bread (16 UBU) & R20 taxi cash-out!
+            ("tok_02", "mannini", "unit-102", 8.00, now),
+            ("tok_03", "sipho", "unit-104", 12.00, now),
+            ("tok_04", "azaria", "unit-104", 30.00, now), # 30 UBU: eligible for taxi cash-out!
+            ("tok_05", "thandi", "unit-104", 16.00, now)  # 16 UBU: 1 free loaf
+        ]
+        cursor.executemany("""
+        INSERT INTO customer_tokens (id, username, unit_id, ubu_balance, updated_at)
+        VALUES (?, ?, ?, ?, ?);
+        """, sample_tokens)
+
 
     if count == 0:
         sample_customers = [

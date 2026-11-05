@@ -131,9 +131,23 @@ def get_unit_detail(
         promos = []
 
     try:
-        loyalty = json.loads(unit.get("loyalty_json") or "{}")
+        loyalty_raw = json.loads(unit.get("loyalty_json") or "{}")
+        if isinstance(loyalty_raw, list):
+            loyalty_list = loyalty_raw
+            loyalty = loyalty_list[0] if loyalty_list else None
+        elif isinstance(loyalty_raw, dict):
+            if "programs" in loyalty_raw:
+                loyalty_list = loyalty_raw.get("programs", [])
+                loyalty = loyalty_raw.get("primary") or (loyalty_list[0] if loyalty_list else None)
+            else:
+                loyalty = loyalty_raw
+                loyalty_list = [loyalty_raw] if (loyalty_raw and loyalty_raw.get("title")) else []
+        else:
+            loyalty = None
+            loyalty_list = []
     except Exception:
         loyalty = None
+        loyalty_list = []
 
     try:
         jobs = json.loads(unit.get("jobs_json") or "[]")
@@ -164,6 +178,7 @@ def get_unit_detail(
         "broadcast_enabled": bool(unit["broadcast_enabled"]),
         "promotions": promos,
         "loyalty_program": loyalty,
+        "loyalty_programs": loyalty_list,
         "jobs": jobs,
         "updated_at": unit["updated_at"]
     }
@@ -181,7 +196,13 @@ def sync_unit_broadcast(unit_id: str, payload_dict: Dict[str, Any]) -> Dict[str,
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     promos_str = json.dumps(payload_dict.get("promotions", []))
-    loyalty_str = json.dumps(payload_dict.get("loyalty_program") or {})
+    programs = payload_dict.get("loyalty_programs") or []
+    if not programs and payload_dict.get("loyalty_program"):
+        programs = [payload_dict.get("loyalty_program")]
+    loyalty_str = json.dumps({
+        "programs": programs,
+        "primary": payload_dict.get("loyalty_program") or (programs[0] if programs else {})
+    })
     jobs_str = json.dumps(payload_dict.get("jobs", []))
     broadcast_enabled = 1 if payload_dict.get("broadcast_enabled", True) else 0
     status = payload_dict.get("status", "OPEN")

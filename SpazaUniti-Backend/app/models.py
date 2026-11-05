@@ -34,6 +34,37 @@ class CustomerResponse(BaseModel):
     asset_scale: int = 2
     status: str
     created_at: str
+    ubuntu_tokens: Dict[str, float] = {}
+    total_ubuntu_tokens: float = 0.0
+    cashout_eligible: bool = False
+    min_cashout_threshold: float = 20.0
+
+class CashoutRequest(BaseModel):
+    unit_id: str = "unit-104"
+    amount: float = 20.00
+    purpose: str = "Taxi / Transportation Allowance"
+
+class CashoutResponse(BaseModel):
+    success: bool
+    amount_cashed_out: float
+    remaining_tokens: float
+    unit_id: str
+    new_zar_balance: float
+    transaction_ref: str
+    receipt_message: str
+
+class SpendTokensRequest(BaseModel):
+    unit_id: str = "unit-104"
+    amount: float = 16.00
+    purpose: str = "Redeem at Store Counter"
+
+class SpendTokensResponse(BaseModel):
+    success: bool
+    amount_spent: float
+    remaining_tokens: float
+    unit_id: str
+    discount_zar_value: float
+    message: str
 
 class WalletAddressResponse(BaseModel):
     """Standard Open Payments Wallet Address Resource specification."""
@@ -145,6 +176,7 @@ class UnitBroadcastPayload(BaseModel):
     status: Optional[str] = "OPEN"
     promotions: Optional[List[Dict[str, Any]]] = []
     loyalty_program: Optional[Dict[str, Any]] = None
+    loyalty_programs: Optional[List[Dict[str, Any]]] = []
     jobs: Optional[List[Dict[str, Any]]] = []
 
 class UnitSummaryResponse(BaseModel):
@@ -189,6 +221,7 @@ class UnitDetailResponse(BaseModel):
     broadcast_enabled: bool
     promotions: List[Dict[str, Any]] = []
     loyalty_program: Optional[Dict[str, Any]] = None
+    loyalty_programs: List[Dict[str, Any]] = []
     jobs: List[Dict[str, Any]] = []
     updated_at: str
 

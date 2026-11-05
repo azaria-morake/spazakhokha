@@ -22,7 +22,11 @@ from .models import (
     UnitRegisterRequest,
     UnitBroadcastPayload,
     UnitSummaryResponse,
-    UnitDetailResponse
+    UnitDetailResponse,
+    CashoutRequest,
+    CashoutResponse,
+    SpendTokensRequest,
+    SpendTokensResponse
 )
 from .resolver import resolve_username, get_wallet_address_doc, check_username_available, get_base_url
 from .grants import create_outgoing_grant, approve_grant, verify_grant_with_pin, get_grant_details
@@ -129,10 +133,18 @@ def get_customer(username: str):
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM customers WHERE username = ?", (clean,))
     row = cursor.fetchone()
-    conn.close()
 
     if not row:
+        conn.close()
         raise HTTPException(status_code=404, detail=f"Customer @{clean} not found")
+
+    cursor.execute("SELECT unit_id, ubu_balance FROM customer_tokens WHERE username = ?", (clean,))
+    token_rows = cursor.fetchall()
+    conn.close()
+
+    tokens_map = {r["unit_id"]: float(r["ubu_balance"]) for r in token_rows}
+    total_tokens = sum(tokens_map.values())
+    is_cashout_eligible = total_tokens >= 20.0
 
     base_url = get_base_url()
     return CustomerResponse(
@@ -147,8 +159,115 @@ def get_customer(username: str):
         asset_code="ZAR",
         asset_scale=2,
         status=row["status"],
-        created_at=row["created_at"]
+        created_at=row["created_at"],
+        ubuntu_tokens=tokens_map,
+        total_ubuntu_tokens=total_tokens,
+        cashout_eligible=is_cashout_eligible,
+        min_cashout_threshold=20.0
     )
+
+@app.post("/api/wallets/{username}/cashout", response_model=CashoutResponse)
+def cashout_ubuntu_tokens(username: str, payload: CashoutRequest):
+    """
+    R20 Ubuntu Token Open Payments Cash-Out:
+    Allows community members to convert >= 20.00 UBU into fiat ZAR purchasing power
+    (for transport, taxi fare, electricity or emergency cash-out).
+    """
+    clean = username.strip().lower().lstrip("@")
+    if payload.amount < 20.0:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Minimum cash-out threshold is 20.00 Ubuntu Tokens (R20.00 taxi fare equivalent). Requested: {payload.amount} UBU"
+        )
+
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM customers WHERE username = ?", (clean,))
+    cust = cursor.fetchone()
+    if not cust:
+        conn.close()
+        raise HTTPException(status_code=404, detail=f"Customer @{clean} not found")
+
+    cursor.execute("SELECT * FROM customer_tokens WHERE username = ? AND unit_id = ?", (clean, payload.unit_id))
+    tok_row = cursor.fetchone()
+    if not tok_row or tok_row["ubu_balance"] < payload.amount:
+        avail = tok_row["ubu_balance"] if tok_row else 0.0
+        conn.close()
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Insufficient Ubuntu Tokens for {payload.unit_id}. Available: {avail} UBU, Requested: {payload.amount} UBU"
+        )
+
+    # 1. Deduct tokens
+    new_token_bal = tok_row["ubu_balance"] - payload.amount
+    now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    cursor.execute("""
+    UPDATE customer_tokens SET ubu_balance = ?, updated_at = ? WHERE username = ? AND unit_id = ?
+    """, (new_token_bal, now_str, clean, payload.unit_id))
+
+    # 2. Credit customer's fiat ZAR wallet (1 UBU = 1 ZAR)
+    new_zar = cust["balance"] + payload.amount
+    cursor.execute("UPDATE customers SET balance = ? WHERE username = ?", (new_zar, clean))
+
+    # 3. Log transaction
+    txn_id = f"txn_cashout_{uuid.uuid4().hex[:10]}"
+    cursor.execute("""
+    INSERT INTO transactions (id, customer_id, username, type, counterparty, amount, purpose, status, ilp_packet_ref, created_at)
+    VALUES (?, ?, ?, 'CASHOUT', ?, ?, ?, 'COMPLETED', ?, ?);
+    """, (
+        txn_id, cust["id"], clean, f"Ubuntu Token Off-Ramp ({payload.unit_id})",
+        payload.amount, f"Cash-out: {payload.purpose}", f"ilp_ubu_cashout_{uuid.uuid4().hex[:8]}", now_str
+    ))
+
+    conn.commit()
+    conn.close()
+
+    return CashoutResponse(
+        success=True,
+        amount_cashed_out=payload.amount,
+        remaining_tokens=new_token_bal,
+        unit_id=payload.unit_id,
+        new_zar_balance=new_zar,
+        transaction_ref=txn_id,
+        receipt_message=f"Success! {payload.amount:.2f} Ubuntu Tokens cashed out to R{payload.amount:.2f} ZAR for {payload.purpose}."
+    )
+
+@app.post("/api/wallets/{username}/spend-tokens", response_model=SpendTokensResponse)
+def spend_ubuntu_tokens(username: str, payload: SpendTokensRequest):
+    """
+    Spends / redeems unit-scoped Ubuntu Tokens at checkout for instant Rand discount.
+    """
+    clean = username.strip().lower().lstrip("@")
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM customer_tokens WHERE username = ? AND unit_id = ?", (clean, payload.unit_id))
+    tok_row = cursor.fetchone()
+    if not tok_row or tok_row["ubu_balance"] < payload.amount:
+        avail = tok_row["ubu_balance"] if tok_row else 0.0
+        conn.close()
+        raise HTTPException(
+            status_code=400,
+            detail=f"Insufficient Ubuntu Tokens for {payload.unit_id}. Available: {avail} UBU, Requested: {payload.amount} UBU"
+        )
+
+    new_token_bal = tok_row["ubu_balance"] - payload.amount
+    now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    cursor.execute("""
+    UPDATE customer_tokens SET ubu_balance = ?, updated_at = ? WHERE username = ? AND unit_id = ?
+    """, (new_token_bal, now_str, clean, payload.unit_id))
+
+    conn.commit()
+    conn.close()
+
+    return SpendTokensResponse(
+        success=True,
+        amount_spent=payload.amount,
+        remaining_tokens=new_token_bal,
+        unit_id=payload.unit_id,
+        discount_zar_value=payload.amount,
+        message=f"Applied {payload.amount:.2f} Ubuntu Tokens (-R{payload.amount:.2f}) from {payload.unit_id}."
+    )
+
 
 @app.get("/api/customers/{username}/transactions", response_model=List[TransactionResponse])
 def get_customer_transactions(username: str):
