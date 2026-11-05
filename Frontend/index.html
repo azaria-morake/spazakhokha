@@ -671,75 +671,31 @@
           </div>
         </div>
 
-        <!-- Loyalty Program Column -->
+        <!-- Loyalty Programs Column -->
         <div class="offerings-column">
           <div class="column-header">
-            <h3>Spaza Uniti Loyalty Program</h3>
-            <span class="badge-tag live-badge">Active Reward</span>
+            <div>
+              <h3>Community Loyalty Pacts</h3>
+              <p class="muted-small">Ubuntu Tokens (1 UBU = R1.00 ZAR) • Unit-Scoped • R20 Taxi Cash-Out</p>
+            </div>
+            <button class="primary-btn btn-sm" id="newLoyaltyBtn">
+              + New Community Pact
+            </button>
           </div>
 
-          <div class="loyalty-card" id="activeLoyaltyCard">
-            <div class="loyalty-header">
-              <div>
-                <span class="loyalty-type">DIGITAL STAMP CARD</span>
-                <h4 id="loyaltyTitle">Daily Bread Stamp Club</h4>
-              </div>
-              <span class="stamp-icon">
-                <svg class="ui-icon ui-icon-xl" viewBox="0 0 24 24" style="stroke: #d97706;">
-                  <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
-                  <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
-                  <path d="M4 22h16" />
-                  <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" />
-                  <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" />
-                  <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" />
-                </svg>
-              </span>
-            </div>
-            <p id="loyaltyRule" class="loyalty-desc">Buy 9 loaves of Albany bread, get the 10th loaf FREE! Tracked
-              automatically on Spaza Uniti.</p>
-
-            <div class="stamps-visualizer" id="stampsDemo">
-              <span class="stamp-dot active" title="Stamp 1"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"
-                  style="stroke-width: 3;">
-                  <polyline points="20 6 9 17 4 12" />
-                </svg></span>
-              <span class="stamp-dot active" title="Stamp 2"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"
-                  style="stroke-width: 3;">
-                  <polyline points="20 6 9 17 4 12" />
-                </svg></span>
-              <span class="stamp-dot active" title="Stamp 3"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"
-                  style="stroke-width: 3;">
-                  <polyline points="20 6 9 17 4 12" />
-                </svg></span>
-              <span class="stamp-dot active" title="Stamp 4"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"
-                  style="stroke-width: 3;">
-                  <polyline points="20 6 9 17 4 12" />
-                </svg></span>
-              <span class="stamp-dot active" title="Stamp 5"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"
-                  style="stroke-width: 3;">
-                  <polyline points="20 6 9 17 4 12" />
-                </svg></span>
-              <span class="stamp-dot active" title="Stamp 6"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"
-                  style="stroke-width: 3;">
-                  <polyline points="20 6 9 17 4 12" />
-                </svg></span>
-              <span class="stamp-dot" title="Stamp 7">7</span>
-              <span class="stamp-dot" title="Stamp 8">8</span>
-              <span class="stamp-dot" title="Stamp 9">9</span>
-              <span class="stamp-dot reward" title="Free Reward!">
-                <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24" style="stroke: #d97706;">
-                  <rect x="3" y="8" width="18" height="4" rx="1" />
-                  <path d="M12 8v13" />
-                  <path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7" />
-                  <path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 4.8 0 0 1 12 8a4.8 4.8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5" />
-                </svg>
-              </span>
-            </div>
-            <div class="loyalty-footer">
-              <span class="muted-small">Configured by AI Co-Pilot • Auto-credited on checkout</span>
-              <button class="secondary-btn btn-sm" id="editLoyaltyBtn">Adjust rules</button>
-            </div>
+          <!-- Quick Township Presets -->
+          <div class="loyalty-presets-bar">
+            <span class="preset-label">Quick Presets:</span>
+            <button type="button" class="preset-pill" data-preset="bread">Daily Bread Club</button>
+            <button type="button" class="preset-pill" data-preset="sassa">SASSA Pensioner Perk</button>
+            <button type="button" class="preset-pill" data-preset="tab">Tab Settlement Hero</button>
           </div>
+
+          <!-- Dynamic Loyalty Program Cards -->
+          <div class="loyalty-programs-list" id="loyaltyProgramsContainer">
+            <!-- Dynamic cards injected here -->
+          </div>
+        </div>
 
           <!-- Customer Discovery Preview -->
           <div class="customer-preview-box">
@@ -1068,6 +1024,87 @@
             </button>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Community Loyalty Pact Creator Modal -->
+  <div class="modal-backdrop" id="loyaltyModalBackdrop" hidden>
+    <div class="op-modal" style="max-width: 540px;">
+      <div class="op-modal-header">
+        <div class="op-modal-title">
+          <span class="op-icon">
+            <svg class="ui-icon ui-icon-lg" viewBox="0 0 24 24" style="stroke: #16a34a; fill: #dcfce7;">
+              <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
+            </svg>
+          </span>
+          <div>
+            <h3>Create Community Loyalty Pact</h3>
+            <p class="muted-small">Ubuntu Tokens (1 UBU = R1.00 ZAR) • Unit-Scoped</p>
+          </div>
+        </div>
+        <button class="modal-close-btn" id="closeLoyaltyModalBtn">&times;</button>
+      </div>
+
+      <div class="op-modal-body">
+        <form id="loyaltyForm" class="stacked-form">
+          <div class="form-group">
+            <label for="loyaltyPactTitle">Program Name</label>
+            <input type="text" id="loyaltyPactTitle" placeholder="e.g. Daily Bread Stamp Club" required />
+          </div>
+
+          <div class="form-group">
+            <label for="loyaltyPactType">Program Archetype</label>
+            <select id="loyaltyPactType">
+              <option value="STAPLE_ACCUMULATOR">Staple Frequency (e.g. Buy 9 bread, get 10th free)</option>
+              <option value="PENSIONER_SASSA_PERK">SASSA Pensioner Goodwill (Sugar, tea, bread bonus)</option>
+              <option value="TAB_REPAYMENT_BONUS">Prompt Tab Repayment Hero (Cashback / Airtime)</option>
+              <option value="CUSTOM_UBUNTU">Custom Community Ubuntu Pact</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="loyaltyCommunityPact">Community Promise</label>
+            <textarea id="loyaltyCommunityPact" rows="2" placeholder="e.g. Buy 9 loaves of Albany bread, get the 10th loaf FREE! Tracked as Ubuntu Tokens." required></textarea>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="loyaltyTargetItem">Target Product</label>
+              <input type="text" id="loyaltyTargetItem" value="Albany Superior White Bread" required />
+            </div>
+            <div class="form-group">
+              <label for="loyaltyShelfPrice">Shelf Price (ZAR)</label>
+              <input type="number" step="0.50" id="loyaltyShelfPrice" value="16.00" required />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="loyaltyStampsCount">Purchases / Milestones Required</label>
+            <input type="number" id="loyaltyStampsCount" value="9" min="1" max="50" required />
+          </div>
+
+          <!-- Real-Time Ubuntu Token Economics Preview -->
+          <div class="ubu-preview-box" id="ubuEconomicsPreview">
+            <div class="ubu-preview-row">
+              <span>Token Rate Earned:</span>
+              <strong id="previewTokenRate">+1.78 UBU / purchase</strong>
+            </div>
+            <div class="ubu-preview-row">
+              <span>Free Reward Milestone:</span>
+              <strong id="previewRewardMilestone">16.00 UBU (R16.00 value)</strong>
+            </div>
+            <div class="ubu-preview-row">
+              <span>Community Off-Ramp:</span>
+              <span class="badge-tag live-badge">R20 Taxi Fare Cash-Out</span>
+            </div>
+          </div>
+
+          <div style="margin-top: 18px; display: flex; justify-content: flex-end; gap: 10px;">
+            <button type="button" class="secondary-btn" id="cancelLoyaltyBtn">Cancel</button>
+            <button type="submit" class="primary-btn">Activate on Spaza Uniti</button>
+          </div>
+        </form>
       </div>
     </div>
   </div>

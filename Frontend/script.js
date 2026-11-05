@@ -211,13 +211,46 @@ let promotions = [
   }
 ];
 
-let loyaltyProgram = {
-  title: "Daily Bread Stamp Club",
-  program_type: "stamp_card",
-  stamps_required: 9,
-  reward_description: "Buy 9 loaves of Albany bread, get the 10th loaf FREE! Tracked automatically on Spaza Uniti.",
-  active: true
-};
+let loyaltyPrograms = [
+  {
+    id: "LOYALTY-001",
+    title: "Daily Bread Stamp Club",
+    program_type: "STAPLE_ACCUMULATOR",
+    community_pact: "Buy 9 loaves of Albany bread, get the 10th loaf FREE! Tracked automatically as Ubuntu Tokens.",
+    target_item: "Albany Superior White Bread",
+    item_price_zar: 16.00,
+    reward_threshold_ubu: 16.00,
+    token_rate_per_event: 1.78,
+    stamps_or_count: 9,
+    active: true
+  },
+  {
+    id: "LOYALTY-002",
+    title: "SASSA Pensioner Goodwill Perk",
+    program_type: "PENSIONER_SASSA_PERK",
+    community_pact: "Every pensioner shopping on SASSA payout day receives 15.00 Ubuntu Tokens for a free 500g sugar pack or tea.",
+    target_item: "500g Sugar Pack or Glen Tea",
+    item_price_zar: 15.00,
+    reward_threshold_ubu: 15.00,
+    token_rate_per_event: 15.00,
+    stamps_or_count: 1,
+    active: true
+  },
+  {
+    id: "LOYALTY-003",
+    title: "Tab Settlement Hero",
+    program_type: "TAB_REPAYMENT_BONUS",
+    community_pact: "Settle your outstanding credit tab within 7 days, get 10.00 Ubuntu Tokens (R10 airtime allowance on the house).",
+    target_item: "Vodacom / MTN R10 Airtime Voucher",
+    item_price_zar: 10.00,
+    reward_threshold_ubu: 10.00,
+    token_rate_per_event: 10.00,
+    stamps_or_count: 1,
+    active: true
+  }
+];
+
+let loyaltyProgram = loyaltyPrograms[0];
 
 let activeOpContext = {
   customerId: "CUST-001",
@@ -273,6 +306,7 @@ async function syncWithBackend() {
     renderRepaymentCustomers();
     renderRepayments();
     renderPromotions();
+    fetchLoyaltyPrograms();
     renderTransactions();
   } catch (err) {
     backendOnline = false;
@@ -281,6 +315,7 @@ async function syncWithBackend() {
     renderPurchases();
     renderRepayments();
     renderPromotions();
+    renderLoyaltyPrograms();
     renderTransactions();
   }
 }
@@ -461,6 +496,7 @@ function openOfferings() {
   offeringsPage.hidden = false;
   pageTitle.textContent = "Spaza Uniti Offerings & Loyalty";
   renderPromotions();
+  fetchLoyaltyPrograms();
 }
 
 document.querySelectorAll(".nav-link").forEach(link => {
@@ -1013,25 +1049,212 @@ function addPromoLocally(title, category, originalPrice, promoPrice, days) {
   updateDashboardMetrics();
 }
 
-document.getElementById("editLoyaltyBtn").addEventListener("click", async () => {
-  const newRule = prompt("Configure Loyalty Program Rule:", loyaltyProgram.reward_description || loyaltyProgram.rewardDescription);
-  if (newRule && newRule.trim()) {
-    loyaltyProgram.reward_description = newRule.trim();
-    document.getElementById("loyaltyRule").textContent = newRule.trim();
-
-    if (backendOnline) {
-      try {
-        await fetch(`${API_BASE}/loyalty`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ reward_description: newRule.trim() })
-        });
-      } catch (e) {
-        console.warn("Could not save loyalty rule to server:", e);
+async function fetchLoyaltyPrograms() {
+  if (backendOnline) {
+    try {
+      const res = await fetch(`${API_BASE}/loyalty`);
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          loyaltyPrograms = data;
+        }
       }
+    } catch (e) {
+      console.warn("Could not fetch loyalty programs:", e);
     }
-    showToast("Loyalty program rules updated and synced to Spaza Uniti!", "celebrate");
   }
+  renderLoyaltyPrograms();
+}
+
+function renderLoyaltyPrograms() {
+  const container = document.getElementById("loyaltyProgramsContainer");
+  if (!container) return;
+  container.replaceChildren();
+
+  loyaltyPrograms.forEach(prog => {
+    const card = document.createElement("article");
+    card.className = `loyalty-card ${prog.active ? "" : "paused"}`;
+
+    const typeLabel = prog.program_type ? prog.program_type.replace(/_/g, " ") : "COMMUNITY PACT";
+
+    card.innerHTML = `
+      <div class="loyalty-top-row">
+        <div class="loyalty-title-wrap">
+          <span class="loyalty-type-badge">${typeLabel}</span>
+          <h4>${prog.title}</h4>
+        </div>
+        <span class="badge-tag ${prog.active ? "live-badge" : "paused-badge"}">
+          ${prog.active ? "Active" : "Paused"}
+        </span>
+      </div>
+
+      <div class="loyalty-pact-text">
+        "${prog.community_pact || prog.reward_description || "Community rewards on purchases."}"
+      </div>
+
+      <div class="loyalty-metrics-grid">
+        <div class="loyalty-metric-col">
+          <span>Target Item</span>
+          <strong>${prog.target_item || "Staples"}</strong>
+        </div>
+        <div class="loyalty-metric-col">
+          <span>Earn Rate</span>
+          <strong>+${Number(prog.token_rate_per_event || 1.78).toFixed(2)} UBU</strong>
+        </div>
+        <div class="loyalty-metric-col">
+          <span>Reward Target</span>
+          <strong>${Number(prog.reward_threshold_ubu || 16.0).toFixed(2)} UBU</strong>
+        </div>
+      </div>
+
+      <div class="loyalty-card-actions">
+        <span class="muted-small">Unit-scoped • R20 Taxi Cash-Out</span>
+        <div style="display: flex; gap: 8px;">
+          <button type="button" class="secondary-btn btn-sm toggle-loyalty-btn" data-id="${prog.id}">
+            ${prog.active ? "Pause" : "Resume"}
+          </button>
+          <button type="button" class="secondary-btn btn-sm delete-loyalty-btn" data-id="${prog.id}" style="color: #dc2626; border-color: #fca5a5;">
+            Delete
+          </button>
+        </div>
+      </div>
+    `;
+
+    card.querySelector(".toggle-loyalty-btn").addEventListener("click", async () => {
+      prog.active = !prog.active;
+      renderLoyaltyPrograms();
+      if (backendOnline) {
+        try {
+          await fetch(`${API_BASE}/loyalty/${prog.id}/toggle`, { method: "PUT" });
+        } catch (e) {
+          console.warn("Toggle loyalty failed:", e);
+        }
+      }
+      showToast(`${prog.title} is now ${prog.active ? "Active" : "Paused"} on Spaza Uniti!`, "info");
+    });
+
+    card.querySelector(".delete-loyalty-btn").addEventListener("click", async () => {
+      if (!confirm(`Delete "${prog.title}"?`)) return;
+      loyaltyPrograms = loyaltyPrograms.filter(p => p.id !== prog.id);
+      renderLoyaltyPrograms();
+      if (backendOnline) {
+        try {
+          await fetch(`${API_BASE}/loyalty/${prog.id}`, { method: "DELETE" });
+        } catch (e) {
+          console.warn("Delete loyalty failed:", e);
+        }
+      }
+      showToast("Program deleted.", "info");
+    });
+
+    container.appendChild(card);
+  });
+}
+
+// Loyalty Modal Handlers
+const loyaltyModalBackdrop = document.getElementById("loyaltyModalBackdrop");
+const newLoyaltyBtn = document.getElementById("newLoyaltyBtn");
+const closeLoyaltyModalBtn = document.getElementById("closeLoyaltyModalBtn");
+const cancelLoyaltyBtn = document.getElementById("cancelLoyaltyBtn");
+const loyaltyForm = document.getElementById("loyaltyForm");
+
+function openLoyaltyModal() {
+  if (loyaltyModalBackdrop) loyaltyModalBackdrop.hidden = false;
+  updateUbuPreview();
+}
+function closeLoyaltyModal() {
+  if (loyaltyModalBackdrop) loyaltyModalBackdrop.hidden = true;
+}
+
+newLoyaltyBtn?.addEventListener("click", openLoyaltyModal);
+closeLoyaltyModalBtn?.addEventListener("click", closeLoyaltyModal);
+cancelLoyaltyBtn?.addEventListener("click", closeLoyaltyModal);
+
+function updateUbuPreview() {
+  const priceInput = document.getElementById("loyaltyShelfPrice");
+  const countInput = document.getElementById("loyaltyStampsCount");
+  const price = priceInput ? Number(priceInput.value) || 16.0 : 16.0;
+  const count = countInput ? Number(countInput.value) || 9 : 9;
+  const rate = (price / Math.max(1, count)).toFixed(2);
+
+  const rateEl = document.getElementById("previewTokenRate");
+  const rewardEl = document.getElementById("previewRewardMilestone");
+  if (rateEl) rateEl.textContent = `+${rate} UBU / purchase`;
+  if (rewardEl) rewardEl.textContent = `${price.toFixed(2)} UBU (R${price.toFixed(2)} value)`;
+}
+
+document.getElementById("loyaltyShelfPrice")?.addEventListener("input", updateUbuPreview);
+document.getElementById("loyaltyStampsCount")?.addEventListener("input", updateUbuPreview);
+
+document.querySelectorAll(".preset-pill").forEach(pill => {
+  pill.addEventListener("click", () => {
+    const preset = pill.dataset.preset;
+    if (preset === "bread") {
+      document.getElementById("loyaltyPactTitle").value = "Daily Bread Stamp Club";
+      document.getElementById("loyaltyPactType").value = "STAPLE_ACCUMULATOR";
+      document.getElementById("loyaltyCommunityPact").value = "Buy 9 loaves of Albany bread, get the 10th loaf FREE! Tracked as Ubuntu Tokens.";
+      document.getElementById("loyaltyTargetItem").value = "Albany Superior White Bread";
+      document.getElementById("loyaltyShelfPrice").value = "16.00";
+      document.getElementById("loyaltyStampsCount").value = "9";
+    } else if (preset === "sassa") {
+      document.getElementById("loyaltyPactTitle").value = "SASSA Pensioner Goodwill Perk";
+      document.getElementById("loyaltyPactType").value = "PENSIONER_SASSA_PERK";
+      document.getElementById("loyaltyCommunityPact").value = "Every pensioner shopping on SASSA payout day receives 15.00 Ubuntu Tokens for a free 500g sugar pack or tea.";
+      document.getElementById("loyaltyTargetItem").value = "500g Sugar Pack or Glen Tea";
+      document.getElementById("loyaltyShelfPrice").value = "15.00";
+      document.getElementById("loyaltyStampsCount").value = "1";
+    } else if (preset === "tab") {
+      document.getElementById("loyaltyPactTitle").value = "Tab Settlement Hero";
+      document.getElementById("loyaltyPactType").value = "TAB_REPAYMENT_BONUS";
+      document.getElementById("loyaltyCommunityPact").value = "Settle your outstanding credit tab within 7 days, get 10.00 Ubuntu Tokens (R10 airtime allowance on the house).";
+      document.getElementById("loyaltyTargetItem").value = "Vodacom / MTN R10 Airtime Voucher";
+      document.getElementById("loyaltyShelfPrice").value = "10.00";
+      document.getElementById("loyaltyStampsCount").value = "1";
+    }
+    openLoyaltyModal();
+  });
+});
+
+loyaltyForm?.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const title = document.getElementById("loyaltyPactTitle").value.trim();
+  const ptype = document.getElementById("loyaltyPactType").value;
+  const pact = document.getElementById("loyaltyCommunityPact").value.trim();
+  const item = document.getElementById("loyaltyTargetItem").value.trim();
+  const price = Number(document.getElementById("loyaltyShelfPrice").value) || 16.0;
+  const count = Number(document.getElementById("loyaltyStampsCount").value) || 9;
+  const rate = Number((price / Math.max(1, count)).toFixed(2));
+
+  const newProg = {
+    title,
+    program_type: ptype,
+    community_pact: pact,
+    target_item: item,
+    item_price_zar: price,
+    reward_threshold_ubu: price,
+    token_rate_per_event: rate,
+    stamps_or_count: count,
+    reward_description: `${pact} (${price.toFixed(2)} UBU Reward)`,
+    active: true
+  };
+
+  loyaltyPrograms.unshift({ ...newProg, id: `LOYALTY-${Date.now().toString().slice(-4)}` });
+  renderLoyaltyPrograms();
+  closeLoyaltyModal();
+
+  if (backendOnline) {
+    try {
+      await fetch(`${API_BASE}/loyalty`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newProg)
+      });
+    } catch (err) {
+      console.warn("Failed to create loyalty program on backend:", err);
+    }
+  }
+
+  showToast(`Pact "${title}" published and live on Spaza Uniti!`, "celebrate");
 });
 
 // ----------------------------------------------------------------------------
