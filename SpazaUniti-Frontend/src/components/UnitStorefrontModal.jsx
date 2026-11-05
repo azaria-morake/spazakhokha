@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Store, 
   MapPin, 
@@ -13,6 +13,7 @@ import {
   CheckCircle2,
   MessageCircle
 } from 'lucide-react';
+import { fetchUnitDetail } from '../services/api';
 
 export default function UnitStorefrontModal({
   isOpen,
@@ -22,11 +23,22 @@ export default function UnitStorefrontModal({
   currentCustomer
 }) {
   const [activeTab, setActiveTab] = useState('specials');
+  const [liveDetails, setLiveDetails] = useState(null);
+
+  useEffect(() => {
+    if (!isOpen || !shop) return;
+    const unitId = shop.unit_id || shop.id;
+    if (unitId) {
+      fetchUnitDetail(unitId).then(data => {
+        if (data) setLiveDetails(data);
+      });
+    }
+  }, [isOpen, shop]);
 
   if (!isOpen || !shop) return null;
 
-  // Standardized deals for this unit
-  const specials = [
+  // Fallback standardized deals for this unit
+  const fallbackSpecials = [
     {
       id: `${shop.id}-deal-1`,
       name: "Cooking Oil 2L Special",
@@ -56,8 +68,24 @@ export default function UnitStorefrontModal({
     }
   ];
 
+  // Resolve specials: use live backend promotions if available, otherwise fallback
+  const specials = (liveDetails?.promotions && liveDetails.promotions.length > 0)
+    ? liveDetails.promotions.map((p, idx) => {
+        const isBread = p.title?.toLowerCase().includes("bread") || p.title?.toLowerCase().includes("albany");
+        return {
+          id: p.id || `${shop.id}-live-promo-${idx}`,
+          name: p.title,
+          price: Number(p.promo_price || p.price || 0),
+          origPrice: Number(p.original_price || p.origPrice || (p.promo_price * 1.2)),
+          discount: p.discount_pct ? `${p.discount_pct}% OFF` : "SPECIAL",
+          image: isBread ? "/bread_loaf.jpg" : "/oil_2l.jpg",
+          unit: p.category || "Grocery Special"
+        };
+      })
+    : fallbackSpecials;
+
   // Community township gigs listed by this store
-  const gigs = [
+  const fallbackGigs = [
     {
       id: "gig-1",
       title: "Weekend Stock & Inventory Packer",
@@ -74,7 +102,20 @@ export default function UnitStorefrontModal({
     }
   ];
 
-  const earnedStamps = Math.min(currentCustomer.stamps || 6, 10);
+  const gigs = (liveDetails?.jobs && liveDetails.jobs.length > 0)
+    ? liveDetails.jobs.map((j, idx) => ({
+        id: j.id || `live-gig-${idx}`,
+        title: j.title,
+        pay: j.pay || "Township Gig",
+        schedule: j.schedule || "Flexible",
+        description: j.description || "Community task at store."
+      }))
+    : fallbackGigs;
+
+  const loyaltyTitle = liveDetails?.loyalty_program?.title || "Daily Bread Stamp Club";
+  const loyaltyReward = liveDetails?.loyalty_program?.reward_description || "Buy 9 loaves of Albany bread, get the 10th loaf FREE! Tracked automatically on Spaza Uniti.";
+  const stampsRequired = liveDetails?.loyalty_program?.stamps_required || 10;
+  const earnedStamps = Math.min(currentCustomer?.stamps || 6, stampsRequired);
 
   return (
     <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -211,20 +252,20 @@ export default function UnitStorefrontModal({
             <div className="bg-[#182130] border border-[#25334a] rounded-2xl p-5 text-center">
               <div className="flex items-center justify-between mb-4">
                 <div className="text-left">
-                  <h4 className="text-base font-bold text-white">Daily Bread Stamp Club</h4>
-                  <p className="text-xs text-slate-400">Tracked automatically for @{currentCustomer.username}</p>
+                  <h4 className="text-base font-bold text-white">{loyaltyTitle}</h4>
+                  <p className="text-xs text-slate-400">Tracked automatically for @{currentCustomer?.username || 'mannini'}</p>
                 </div>
                 <span className="bg-amber-400/20 text-amber-300 border border-amber-400/40 text-xs font-bold px-3 py-1 rounded-full">
-                  {earnedStamps} / 10 Stamps Collected
+                  {earnedStamps} / {stampsRequired} Stamps Collected
                 </span>
               </div>
 
-              {/* 10 Stamps Grid */}
+              {/* Stamps Grid */}
               <div className="grid grid-cols-5 gap-3 my-5 p-4 bg-[#101622] rounded-xl border border-[#232f44]">
-                {[...Array(10)].map((_, i) => {
+                {[...Array(stampsRequired)].map((_, i) => {
                   const stampNum = i + 1;
                   const isFilled = stampNum <= earnedStamps;
-                  const isReward = stampNum === 10;
+                  const isReward = stampNum === stampsRequired;
 
                   return (
                     <div
@@ -250,7 +291,7 @@ export default function UnitStorefrontModal({
               <div className="bg-amber-950/30 border border-amber-500/30 rounded-xl p-3 text-left flex items-center gap-3">
                 <Trophy className="w-6 h-6 text-amber-400 shrink-0" />
                 <p className="text-xs text-amber-200">
-                  <strong>Reward Milestone:</strong> Buy 9 loaves of Albany bread, get the 10th loaf FREE! Tracked automatically on Spaza Uniti.
+                  <strong>Reward Milestone:</strong> {loyaltyReward}
                 </p>
               </div>
             </div>
