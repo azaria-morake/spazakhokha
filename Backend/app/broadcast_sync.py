@@ -56,17 +56,29 @@ def sync_to_spaza_uniti() -> Dict[str, Any]:
                 "active": True
             })
 
+    loyalty_list = []
     loyalty_dict = None
     if broadcast_enabled:
-        cursor.execute("SELECT * FROM loyalty_programs WHERE unit_id = ? AND active = 1", (unit_id,))
-        l_row = cursor.fetchone()
-        if l_row:
-            loyalty_dict = {
+        cursor.execute("SELECT * FROM loyalty_programs WHERE unit_id = ? AND active = 1 ORDER BY created_at ASC", (unit_id,))
+        l_rows = cursor.fetchall()
+        for l_row in l_rows:
+            prog = {
+                "id": l_row["id"],
                 "title": l_row["title"],
+                "community_pact": l_row["community_pact"],
+                "program_type": l_row["program_type"],
+                "target_item": l_row["target_item"],
+                "item_price_zar": float(l_row["item_price_zar"] or 16.0),
+                "reward_threshold_ubu": float(l_row["reward_threshold_ubu"] or 16.0),
+                "token_rate_per_event": float(l_row["token_rate_per_event"] or 1.78),
+                "stamps_or_count": int(l_row["stamps_or_count"] or 9),
+                "stamps_required": int(l_row["stamps_required"] or 9),
                 "reward_description": l_row["reward_description"],
-                "stamps_required": int(l_row["stamps_required"]),
                 "active": True
             }
+            loyalty_list.append(prog)
+        if loyalty_list:
+            loyalty_dict = loyalty_list[0]
 
     conn.close()
 
@@ -93,6 +105,7 @@ def sync_to_spaza_uniti() -> Dict[str, Any]:
         "status": settings.get("status", "OPEN"),
         "promotions": promotions_list,
         "loyalty_program": loyalty_dict,
+        "loyalty_programs": loyalty_list,
         "jobs": jobs_list
     }
 

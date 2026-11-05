@@ -101,19 +101,48 @@ def init_db():
     );
     """)
 
-    # Loyalty Programs
+    # Loyalty Programs (Declarative Ubuntu Token Community Contracts)
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS loyalty_programs (
         id TEXT PRIMARY KEY,
         unit_id TEXT NOT NULL,
         title TEXT NOT NULL,
         program_type TEXT NOT NULL,
+        community_pact TEXT NOT NULL,
+        target_item TEXT DEFAULT 'Albany Superior White Bread',
+        item_price_zar REAL DEFAULT 16.00,
+        reward_threshold_ubu REAL DEFAULT 16.00,
+        token_rate_per_event REAL DEFAULT 1.78,
+        stamps_or_count INTEGER DEFAULT 9,
         stamps_required INTEGER DEFAULT 9,
         reward_description TEXT NOT NULL,
         active BOOLEAN DEFAULT 1,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (unit_id) REFERENCES units (id)
     );
     """)
+
+    # Dynamic migrations for loyalty_programs columns
+    cursor.execute("PRAGMA table_info(loyalty_programs)")
+    existing_cols = [row[1] for row in cursor.fetchall()]
+    new_cols = [
+        ("community_pact", "TEXT DEFAULT 'Buy 9 loaves of Albany bread, get the 10th loaf FREE!'"),
+        ("target_item", "TEXT DEFAULT 'Albany Superior White Bread'"),
+        ("item_price_zar", "REAL DEFAULT 16.00"),
+        ("reward_threshold_ubu", "REAL DEFAULT 16.00"),
+        ("token_rate_per_event", "REAL DEFAULT 1.78"),
+        ("stamps_or_count", "INTEGER DEFAULT 9"),
+        ("created_at", "TEXT DEFAULT ''")
+    ]
+    for col_name, col_def in new_cols:
+        if col_name not in existing_cols:
+            cursor.execute(f"ALTER TABLE loyalty_programs ADD COLUMN {col_name} {col_def}")
+
+    # Ensure customers has ubuntu_tokens
+    cursor.execute("PRAGMA table_info(customers)")
+    cust_cols = [row[1] for row in cursor.fetchall()]
+    if "ubuntu_tokens" not in cust_cols:
+        cursor.execute("ALTER TABLE customers ADD COLUMN ubuntu_tokens REAL DEFAULT 0.0")
 
     # Seed default data if empty
     cursor.execute("SELECT COUNT(*) FROM units")
@@ -124,12 +153,12 @@ def init_db():
         """)
 
         cursor.executemany("""
-        INSERT INTO customers (id, unit_id, name, phone, credit_limit, balance, stamps, notes)
-        VALUES (?, 'unit-104', ?, ?, ?, ?, ?, ?);
+        INSERT INTO customers (id, unit_id, name, phone, credit_limit, balance, stamps, ubuntu_tokens, notes)
+        VALUES (?, 'unit-104', ?, ?, ?, ?, ?, ?, ?);
         """, [
-            ('CUST-001', 'Sipho Dlamini', '082 555 1234', 400.0, 84.0, 6, 'Zone 2, reliable neighbor'),
-            ('CUST-002', 'Mama Thandi', '071 888 4321', 600.0, 0.0, 9, 'School teacher, settles monthly'),
-            ('CUST-003', 'Bongani Sithole', '083 444 9876', 300.0, 45.0, 3, 'Taxi rank vendor')
+            ('CUST-001', 'Sipho Dlamini', '082 555 1234', 400.0, 84.0, 6, 12.0, 'Zone 2, reliable neighbor'),
+            ('CUST-002', 'Mama Thandi', '071 888 4321', 600.0, 0.0, 9, 18.0, 'School teacher, settles monthly'),
+            ('CUST-003', 'Bongani Sithole', '083 444 9876', 300.0, 45.0, 3, 6.0, 'Taxi rank vendor')
         ])
 
         cursor.executemany("""
@@ -162,10 +191,28 @@ def init_db():
             ('PROMO-002', 'Golden Cloud Cake Flour 2.5kg', 'Staples', 42.00, 35.00, 16, 4)
         ])
 
-        cursor.execute("""
-        INSERT INTO loyalty_programs (id, unit_id, title, program_type, stamps_required, reward_description, active)
-        VALUES ('LOYALTY-001', 'unit-104', 'Daily Bread Stamp Club', 'stamp_card', 9, 'Buy 9 loaves of Albany bread, get the 10th loaf FREE! Tracked automatically on Spaza Uniti.', 1);
-        """)
+    # Seed multiple community loyalty programs if count < 2
+    cursor.execute("SELECT COUNT(*) FROM loyalty_programs WHERE unit_id = 'unit-104'")
+    if cursor.fetchone()[0] < 2:
+        cursor.execute("DELETE FROM loyalty_programs WHERE unit_id = 'unit-104'")
+        cursor.executemany("""
+        INSERT INTO loyalty_programs (id, unit_id, title, program_type, community_pact, target_item, item_price_zar, reward_threshold_ubu, token_rate_per_event, stamps_or_count, stamps_required, reward_description, active)
+        VALUES (?, 'unit-104', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1);
+        """, [
+            ('LOYALTY-001', 'Daily Bread Stamp Club', 'STAPLE_ACCUMULATOR', 
+             'Buy 9 loaves of Albany bread, get the 10th loaf FREE! Tracked automatically as Ubuntu Tokens.', 
+             'Albany Superior White Bread', 16.00, 16.00, 1.78, 9, 9, 
+             'Buy 9 loaves of Albany bread, get the 10th loaf FREE! (16.00 UBU Reward)'),
+            ('LOYALTY-002', 'SASSA Pensioner Goodwill Perk', 'PENSIONER_SASSA_PERK', 
+             'Every pensioner shopping on SASSA payout day receives 15.00 Ubuntu Tokens for a free 500g sugar pack or tea.', 
+             '500g Sugar Pack or Glen Tea', 15.00, 15.00, 15.00, 1, 1, 
+             'Free 500g sugar pack or tea on pension payout days (15.00 UBU)'),
+            ('LOYALTY-003', 'Tab Settlement Hero', 'TAB_REPAYMENT_BONUS', 
+             'Settle your outstanding credit tab within 7 days, get 10.00 Ubuntu Tokens (R10 airtime allowance on the house).', 
+             'Vodacom / MTN R10 Airtime Voucher', 10.00, 10.00, 10.00, 1, 1, 
+             'R10 Airtime grant for prompt tab settlement (10.00 UBU)')
+        ])
+
 
     # Store Settings (including Spaza Uniti broadcast toggle)
     cursor.execute("""

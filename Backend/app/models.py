@@ -80,12 +80,30 @@ class LoyaltyProgramResponse(BaseModel):
     unit_id: str
     title: str
     program_type: str
-    stamps_required: int
+    community_pact: Optional[str] = None
+    target_item: Optional[str] = None
+    item_price_zar: Optional[float] = 16.00
+    reward_threshold_ubu: Optional[float] = 16.00
+    token_rate_per_event: Optional[float] = 1.78
+    stamps_or_count: Optional[int] = 9
+    stamps_required: Optional[int] = 9
     reward_description: str
     active: bool
+    created_at: Optional[str] = None
+
+class LoyaltyProgramCreate(BaseModel):
+    title: str
+    program_type: str = "STAPLE_ACCUMULATOR"
+    community_pact: str
+    target_item: str = "Albany Superior White Bread"
+    item_price_zar: float = 16.00
+    stamps_or_count: int = 9
+    reward_description: Optional[str] = None
 
 class LoyaltyProgramUpdate(BaseModel):
-    reward_description: str
+    reward_description: Optional[str] = None
+    community_pact: Optional[str] = None
+    active: Optional[bool] = None
 
 class AgentChatRequest(BaseModel):
     user_input: str

@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Dict, Any
 import sqlite3
+import uuid
 
 from .database import init_db, get_db
 from .models import (
@@ -10,7 +11,7 @@ from .models import (
     RepaymentCreate, RepaymentResponse,
     TransactionResponse,
     PromotionCreate, PromotionResponse,
-    LoyaltyProgramResponse, LoyaltyProgramUpdate,
+    LoyaltyProgramResponse, LoyaltyProgramCreate, LoyaltyProgramUpdate,
     AgentChatRequest, AgentChatResponse,
     OpenPaymentsRequestCreate, OpenPaymentsRequestResponse,
     OpenPaymentsWebhookPayload,
@@ -325,24 +326,96 @@ def create_promotion(payload: PromotionCreate):
 
     return dict(row)
 
-@app.get("/api/loyalty", response_model=LoyaltyProgramResponse)
-def get_loyalty():
+@app.get("/api/loyalty", response_model=List[LoyaltyProgramResponse])
+def get_loyalty_programs():
+    """Lists all active and configured loyalty programs for this unit."""
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM loyalty_programs WHERE unit_id = 'unit-104'")
+    cursor.execute("SELECT * FROM loyalty_programs WHERE unit_id = 'unit-104' ORDER BY created_at ASC")
+    rows = cursor.fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+@app.post("/api/loyalty", response_model=LoyaltyProgramResponse)
+def create_loyalty_program(payload: LoyaltyProgramCreate):
+    """Creates a new community loyalty program with Ubuntu Token economics."""
+    prog_id = f"LOYALTY-{uuid.uuid4().hex[:6].upper()}"
+    reward_threshold = payload.item_price_zar
+    token_rate = round(payload.item_price_zar / max(1, payload.stamps_or_count), 2)
+    reward_desc = payload.reward_description or f"{payload.community_pact} ({reward_threshold:.2f} UBU)"
+    
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("""
+    INSERT INTO loyalty_programs (
+        id, unit_id, title, program_type, community_pact, target_item, item_price_zar,
+        reward_threshold_ubu, token_rate_per_event, stamps_or_count, stamps_required, reward_description, active
+    ) VALUES (?, 'unit-104', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1);
+    """, (
+        prog_id, payload.title, payload.program_type, payload.community_pact, payload.target_item,
+        payload.item_price_zar, reward_threshold, token_rate, payload.stamps_or_count, payload.stamps_or_count,
+        reward_desc
+    ))
+    conn.commit()
+    cursor.execute("SELECT * FROM loyalty_programs WHERE id = ?", (prog_id,))
     row = cursor.fetchone()
     conn.close()
-    if not row:
-        raise HTTPException(status_code=404, detail="No loyalty program configured")
+
+    try:
+        sync_to_spaza_uniti()
+    except Exception:
+        pass
+
     return dict(row)
+
+@app.put("/api/loyalty/{program_id}/toggle", response_model=LoyaltyProgramResponse)
+def toggle_loyalty_program(program_id: str):
+    """Toggles active state of a loyalty program."""
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT active FROM loyalty_programs WHERE id = ?", (program_id,))
+    row = cursor.fetchone()
+    if not row:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Program not found")
+    
+    new_state = 0 if row["active"] else 1
+    cursor.execute("UPDATE loyalty_programs SET active = ? WHERE id = ?", (new_state, program_id))
+    conn.commit()
+    cursor.execute("SELECT * FROM loyalty_programs WHERE id = ?", (program_id,))
+    updated = cursor.fetchone()
+    conn.close()
+
+    try:
+        sync_to_spaza_uniti()
+    except Exception:
+        pass
+
+    return dict(updated)
+
+@app.delete("/api/loyalty/{program_id}")
+def delete_loyalty_program(program_id: str):
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM loyalty_programs WHERE id = ?", (program_id,))
+    conn.commit()
+    conn.close()
+
+    try:
+        sync_to_spaza_uniti()
+    except Exception:
+        pass
+
+    return {"status": "deleted", "id": program_id}
 
 @app.put("/api/loyalty", response_model=LoyaltyProgramResponse)
 def update_loyalty(payload: LoyaltyProgramUpdate):
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute("UPDATE loyalty_programs SET reward_description = ? WHERE unit_id = 'unit-104'", (payload.reward_description,))
-    conn.commit()
-    cursor.execute("SELECT * FROM loyalty_programs WHERE unit_id = 'unit-104'")
+    if payload.reward_description:
+        cursor.execute("UPDATE loyalty_programs SET reward_description = ? WHERE unit_id = 'unit-104'", (payload.reward_description,))
+        conn.commit()
+    cursor.execute("SELECT * FROM loyalty_programs WHERE unit_id = 'unit-104' LIMIT 1")
     row = cursor.fetchone()
     conn.close()
 

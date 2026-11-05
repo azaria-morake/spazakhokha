@@ -84,6 +84,32 @@ TOOL_DEFINITIONS = [
             },
             "required": ["customer_query"]
         }
+    },
+    {
+        "name": "create_loyalty_program",
+        "description": "Creates a community loyalty program pegged to Ubuntu Tokens (1 UBU = 1 ZAR, Unit-scoped). Auto-calculates reward threshold and token rate using product shelf price.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "title": {"type": "string", "description": "Program name (e.g. Daily Bread Stamp Club)"},
+                "community_pact": {"type": "string", "description": "The human promise to the community (e.g. Buy 9 loaves get 10th free)"},
+                "target_item": {"type": "string", "description": "Target product (e.g. Albany Superior White Bread)"},
+                "stamps_or_count": {"type": "integer", "description": "Number of purchases required (e.g. 9)"},
+                "program_type": {"type": "string", "enum": ["STAPLE_ACCUMULATOR", "PENSIONER_SASSA_PERK", "TAB_REPAYMENT_BONUS", "CUSTOM_UBUNTU"]}
+            },
+            "required": ["title", "community_pact", "target_item"]
+        }
+    },
+    {
+        "name": "lookup_product_price",
+        "description": "Checks the known counter/shelf price of an item in the store catalog.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "product_query": {"type": "string"}
+            },
+            "required": ["product_query"]
+        }
     }
 ]
 
@@ -249,6 +275,83 @@ def execute_create_promotion(unit_id: str, title: str, category: str, original_p
     }
     return text, mutation
 
+def execute_lookup_product_price(product_query: str) -> Tuple[str, float]:
+    lower = product_query.lower()
+    price = 16.0
+    item_matched = "Albany Superior White Bread"
+    if "simba" in lower or "chips" in lower:
+        price = 18.0
+        item_matched = "Simba Chips"
+    elif "bread" in lower or "albany" in lower:
+        price = 16.0
+        item_matched = "Albany Superior White Bread"
+    elif "maize" in lower:
+        price = 38.0
+        item_matched = "White Star Super Maize Meal 5kg"
+    elif "flour" in lower:
+        price = 35.0
+        item_matched = "Golden Cloud Cake Flour 2.5kg"
+    elif "sugar" in lower or "tea" in lower:
+        price = 15.0
+        item_matched = "500g Sugar Pack or Glen Tea"
+    elif "coke" in lower or "cola" in lower:
+        price = 14.0
+        item_matched = "Coca-Cola 330ml Can"
+    elif "airtime" in lower:
+        price = 10.0
+        item_matched = "R10 Airtime Voucher"
+    return f"**{item_matched}** is currently priced at **R{price:.2f}**.", price
+
+def execute_create_loyalty_program(
+    unit_id: str,
+    title: str,
+    community_pact: str,
+    target_item: str = "Albany Superior White Bread",
+    stamps_or_count: int = 9,
+    program_type: str = "STAPLE_ACCUMULATOR"
+) -> Tuple[str, Dict[str, Any]]:
+    _, price = execute_lookup_product_price(target_item)
+    threshold_ubu = price
+    token_rate = round(price / max(1, stamps_or_count), 2)
+    prog_id = f"LOYALTY-{uuid.uuid4().hex[:6].upper()}"
+    reward_desc = f"{community_pact} ({threshold_ubu:.2f} UBU Reward)"
+
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("""
+    INSERT INTO loyalty_programs (
+        id, unit_id, title, program_type, community_pact, target_item, item_price_zar,
+        reward_threshold_ubu, token_rate_per_event, stamps_or_count, stamps_required, reward_description, active
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1);
+    """, (
+        prog_id, unit_id, title, program_type, community_pact, target_item,
+        price, threshold_ubu, token_rate, stamps_or_count, stamps_or_count, reward_desc
+    ))
+    conn.commit()
+    conn.close()
+
+    try:
+        from .broadcast_sync import sync_to_spaza_uniti
+        sync_to_spaza_uniti()
+    except Exception:
+        pass
+
+    text = (
+        f"Loyalty Program activated! **{title}** is now live on Spaza Uniti.\n"
+        f"• Community Promise: \"{community_pact}\"\n"
+        f"• Target Item: {target_item} (Shelf price: R{price:.2f})\n"
+        f"• Ubuntu Tokens: Customers earn **{token_rate:.2f} UBU** per purchase.\n"
+        f"• Free Reward: Reached at **{threshold_ubu:.2f} UBU**.\n"
+        f"• Community Off-Ramp: Eligible for R20 taxi/transport cash-out at 20 UBU!"
+    )
+    mutation = {
+        "program_id": prog_id,
+        "title": title,
+        "reward_threshold_ubu": threshold_ubu,
+        "token_rate": token_rate
+    }
+    return text, mutation
+
 def execute_get_status(unit_id: str, customer_query: str) -> Tuple[str, Dict[str, Any]]:
     conn = get_db()
     cust = find_customer(conn, customer_query, prefer_with_balance=True)
@@ -325,6 +428,28 @@ def dispatch_tool_call(unit_id: str, tool_name: str, args: Dict[str, Any]) -> Op
             "tool_called": "get_customer_tab_status",
             "tool_parameters": args,
             "data_mutation": None  # READ-ONLY INQUIRY: Never mark as a data mutation!
+        }
+    elif tool_name == "create_loyalty_program":
+        title = args.get("title", "Community Loyalty Club")
+        community_pact = args.get("community_pact", "Buy items and earn Ubuntu Tokens!")
+        target_item = args.get("target_item", "Albany Superior White Bread")
+        stamps_or_count = int(args.get("stamps_or_count", 9))
+        program_type = args.get("program_type", "STAPLE_ACCUMULATOR")
+        res_text, mutation = execute_create_loyalty_program(unit_id, title, community_pact, target_item, stamps_or_count, program_type)
+        return {
+            "response_text": res_text,
+            "tool_called": "create_loyalty_program",
+            "tool_parameters": args,
+            "data_mutation": mutation
+        }
+    elif tool_name == "lookup_product_price":
+        product_query = args.get("product_query", "")
+        res_text, _ = execute_lookup_product_price(product_query)
+        return {
+            "response_text": res_text,
+            "tool_called": "lookup_product_price",
+            "tool_parameters": args,
+            "data_mutation": None
         }
     return None
 
@@ -634,6 +759,41 @@ def parse_with_dynamic_local_engine(text: str, unit_id: str, customers_rows: lis
             "tool_called": "get_customer_tab_status",
             "tool_parameters": tool_params,
             "data_mutation": None  # READ-ONLY INQUIRY!
+        }
+
+    # Action 5: Loyalty Program Creation
+    if any(k in lower for k in ["loyalty", "stamp card", "bread stamp", "pensioner", "sassa", "ubuntu token"]):
+        title = "Daily Bread Stamp Club"
+        pact = "Buy 9 loaves of Albany bread, get the 10th loaf FREE! Tracked as Ubuntu Tokens."
+        item = "Albany Superior White Bread"
+        count = 9
+        ptype = "STAPLE_ACCUMULATOR"
+
+        if "pensioner" in lower or "sassa" in lower:
+            title = "SASSA Pensioner Goodwill Perk"
+            pact = "Every pensioner shopping on SASSA payout day receives 15.00 Ubuntu Tokens for a free 500g sugar pack or tea."
+            item = "500g Sugar Pack or Glen Tea"
+            count = 1
+            ptype = "PENSIONER_SASSA_PERK"
+        elif "tab" in lower or "debt" in lower or "settle" in lower:
+            title = "Tab Settlement Hero"
+            pact = "Settle your credit tab on time, get 10.00 Ubuntu Tokens for R10 free airtime."
+            item = "R10 Airtime Voucher"
+            count = 1
+            ptype = "TAB_REPAYMENT_BONUS"
+
+        res_text, mutation = execute_create_loyalty_program(unit_id, title, pact, item, count, ptype)
+        return {
+            "response_text": res_text,
+            "tool_called": "create_loyalty_program",
+            "tool_parameters": {
+                "title": title,
+                "community_pact": pact,
+                "target_item": item,
+                "stamps_or_count": count,
+                "program_type": ptype
+            },
+            "data_mutation": mutation
         }
 
     return {
