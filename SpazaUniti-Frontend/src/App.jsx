@@ -45,6 +45,7 @@ export default function App() {
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [pendingGrant, setPendingGrant] = useState(null);
+  const [applyTokens, setApplyTokens] = useState(false);
 
   // Sync customer from backend on mount
   useEffect(() => {
@@ -56,7 +57,10 @@ export default function App() {
           balance: data.balance,
           open_payments_id: data.open_payments_id,
           name: data.full_name || prev.name,
-          stamps: data.stamps || prev.stamps
+          stamps: data.stamps || prev.stamps,
+          ubuntu_tokens: data.ubuntu_tokens || prev.ubuntu_tokens || {},
+          total_ubuntu_tokens: data.total_ubuntu_tokens || prev.total_ubuntu_tokens || 0.0,
+          cashout_eligible: data.cashout_eligible ?? false
         }));
       }
     }
@@ -151,18 +155,24 @@ export default function App() {
     const storeName = recipientStore.name;
     const storeWallet = recipientStore.open_payments_id || "$spazauniti.org/unit-104";
 
+    const availableTokens = currentCustomer.ubuntu_tokens?.[storeId] ?? 24.0;
+    const tokensDiscount = applyTokens ? Math.min(subtotal, availableTokens >= 16.0 ? 16.0 : availableTokens) : 0;
+    const finalAmount = Math.max(0.01, subtotal - tokensDiscount);
+
     try {
       const grant = await createOutgoingPaymentGrant(currentCustomer.username, {
-        amount: subtotal,
+        amount: finalAmount,
         merchant_id: storeId,
         merchant_name: storeName,
         merchant_wallet: storeWallet,
-        purpose: `Marketplace Cart: ${cartItems.map(c => c.name).join(', ')}`
+        purpose: `Marketplace Cart: ${cartItems.map(c => c.name).join(', ')}${tokensDiscount > 0 ? ` (Applied ${tokensDiscount.toFixed(2)} UBU discount)` : ''}`
       });
 
       setPendingGrant({
         grantId: grant.grant_id,
-        amount: subtotal,
+        amount: finalAmount,
+        originalAmount: subtotal,
+        tokensDiscount: tokensDiscount,
         storeName: storeName,
         recipientWallet: storeWallet
       });
@@ -176,13 +186,26 @@ export default function App() {
   // Payment Success Handler
   const handlePaymentSuccess = (result) => {
     const newBal = result.new_balance ?? result.new_wallet_balance ?? (currentCustomer.balance - (pendingGrant?.amount || 0));
-    setCurrentCustomer(prev => ({
-      ...prev,
-      balance: newBal,
-      points: prev.points + 5,
-      stamps: (prev.stamps + 1) % 10
-    }));
+    const storeId = selectedShop?.unit_id || "unit-104";
+    const tokensUsed = pendingGrant?.tokensDiscount || 0;
+
+    setCurrentCustomer(prev => {
+      const prevTokens = prev.ubuntu_tokens || {};
+      const currentStoreTok = prevTokens[storeId] ?? 24.0;
+      const updatedStoreTok = Math.max(0, currentStoreTok - tokensUsed + 1.78);
+      return {
+        ...prev,
+        balance: newBal,
+        points: prev.points + 5,
+        stamps: (prev.stamps + 1) % 10,
+        ubuntu_tokens: {
+          ...prevTokens,
+          [storeId]: updatedStoreTok
+        }
+      };
+    });
     setCartItems([]);
+    setApplyTokens(false);
   };
 
   // Filter shops by search and category
@@ -255,6 +278,9 @@ export default function App() {
         onInitiateCheckout={handleInitiateCheckout}
         pointsEarned={5}
         currentPoints={currentCustomer.points || 245}
+        userUbuTokens={currentCustomer.ubuntu_tokens?.[selectedShop?.unit_id || "unit-104"] ?? 24.0}
+        applyTokens={applyTokens}
+        onToggleApplyTokens={() => setApplyTokens(!applyTokens)}
         onOpenRewards={() => {
           setSelectedShop(shops[0]);
           setIsStorefrontOpen(true);
@@ -292,7 +318,13 @@ export default function App() {
         onRefreshCustomer={async () => {
           const updated = await fetchCustomer(currentCustomer.username);
           if (updated) {
-            setCurrentCustomer(prev => ({ ...prev, balance: updated.balance }));
+            setCurrentCustomer(prev => ({
+              ...prev,
+              balance: updated.balance,
+              ubuntu_tokens: updated.ubuntu_tokens || prev.ubuntu_tokens,
+              total_ubuntu_tokens: updated.total_ubuntu_tokens || prev.total_ubuntu_tokens,
+              cashout_eligible: updated.cashout_eligible ?? false
+            }));
           }
         }}
       />

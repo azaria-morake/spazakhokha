@@ -6,7 +6,10 @@ import {
   Trash2, 
   CreditCard, 
   Star, 
-  ArrowRight 
+  ArrowRight,
+  Coins,
+  Bus,
+  Check
 } from 'lucide-react';
 
 export default function CartSidebar({
@@ -16,10 +19,16 @@ export default function CartSidebar({
   onInitiateCheckout,
   pointsEarned = 5,
   currentPoints = 245,
+  userUbuTokens = 24.0,
+  applyTokens = false,
+  onToggleApplyTokens,
   onOpenRewards
 }) {
   const totalCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+  const tokenDiscount = applyTokens ? Math.min(subtotal, userUbuTokens >= 16.0 ? 16.0 : userUbuTokens) : 0;
+  const netPayable = Math.max(0, subtotal - tokenDiscount);
 
   return (
     <aside className="w-80 bg-[#0d1117] border-l border-[#1e2638] flex flex-col justify-between p-5 min-h-screen shrink-0 select-none">
@@ -112,19 +121,60 @@ export default function CartSidebar({
       </div>
 
       {/* Cart Footer: Subtotal, Reward Badge, Open Payments Button & Purple Rewards Box */}
-      <div className="pt-4 border-t border-[#1b2332] space-y-3.5 mt-auto">
-        {/* Subtotal Row */}
-        <div className="flex items-center justify-between px-1">
-          <span className="text-sm font-semibold text-slate-300">Subtotal</span>
-          <span className="text-lg font-black text-white">R{subtotal.toFixed(2)}</span>
+      <div className="pt-4 border-t border-[#1b2332] space-y-3 mt-auto">
+        {/* Ubuntu Token Discount Toggle */}
+        {subtotal > 0 && userUbuTokens > 0 && (
+          <div 
+            onClick={onToggleApplyTokens}
+            className={`border rounded-xl px-3 py-2 flex items-center justify-between transition-all cursor-pointer select-none ${
+              applyTokens 
+                ? 'bg-amber-950/40 border-amber-500/50 text-amber-200' 
+                : 'bg-[#151c28] border-[#222e42] text-slate-400 hover:border-slate-600'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <Coins className={`w-4 h-4 ${applyTokens ? 'text-amber-400' : 'text-slate-500'}`} />
+              <div className="text-left">
+                <span className="text-xs font-bold block text-white">Apply Ubuntu Tokens</span>
+                <span className="text-[10px] text-slate-400">Available: {Number(userUbuTokens).toFixed(2)} UBU (1:1 ZAR)</span>
+              </div>
+            </div>
+            <div className={`w-5 h-5 rounded-md flex items-center justify-center border transition-all ${
+              applyTokens ? 'bg-amber-500 border-amber-400 text-slate-950' : 'border-slate-600'
+            }`}>
+              {applyTokens && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+            </div>
+          </div>
+        )}
+
+        {/* Subtotal & Net Payable Breakdown */}
+        <div className="space-y-1 px-1">
+          {applyTokens && tokenDiscount > 0 && (
+            <>
+              <div className="flex items-center justify-between text-xs text-slate-400">
+                <span>Subtotal</span>
+                <span>R{subtotal.toFixed(2)}</span>
+              </div>
+              <div className="flex items-center justify-between text-xs text-amber-400 font-bold">
+                <span>Ubuntu Tokens Applied</span>
+                <span>-R{tokenDiscount.toFixed(2)}</span>
+              </div>
+            </>
+          )}
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-semibold text-slate-300">
+              {applyTokens && tokenDiscount > 0 ? "Net Payable" : "Subtotal"}
+            </span>
+            <span className="text-lg font-black text-white">R{netPayable.toFixed(2)}</span>
+          </div>
         </div>
 
         {/* Loyalty Reward Info Box */}
         {subtotal > 0 && (
-          <div className="bg-[#10241b] border border-[#1b3d2d] rounded-xl px-3.5 py-2.5 flex items-center gap-2.5">
-            <Star className="w-4 h-4 text-amber-400 fill-amber-400 shrink-0" />
+          <div className="bg-[#10241b] border border-[#1b3d2d] rounded-xl px-3 py-2 flex items-center gap-2">
+            <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400 shrink-0" />
             <span className="text-xs font-semibold text-emerald-300">
-              You'll earn {pointsEarned} points with this purchase!
+              Earn +1.78 UBU & {pointsEarned} pts with this purchase!
             </span>
           </div>
         )}
@@ -136,7 +186,9 @@ export default function CartSidebar({
           className="w-full bg-[#22c55e] hover:bg-[#16a34a] disabled:bg-slate-800 disabled:text-slate-600 disabled:cursor-not-allowed text-slate-950 font-bold py-3.5 px-4 rounded-2xl flex items-center justify-center gap-2.5 shadow-lg shadow-emerald-500/20 transition-all hover:shadow-emerald-500/30 hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
         >
           <CreditCard className="w-5 h-5 text-slate-950" />
-          <span className="text-sm tracking-wide">Pay with OpenPayments</span>
+          <span className="text-sm tracking-wide">
+            {netPayable === 0 ? "Claim with Ubuntu Tokens" : `Pay R${netPayable.toFixed(2)} with OpenPayments`}
+          </span>
         </button>
 
         {/* Bottom Purple Promo Box: Your Rewards */}
@@ -150,11 +202,12 @@ export default function CartSidebar({
               <span>Your Rewards</span>
               <ArrowRight className="w-3 h-3 ml-1 group-hover:translate-x-1 transition-transform" />
             </div>
-            <div className="text-2xl font-black text-white tracking-tight">
-              {currentPoints} pts
+            <div className="text-xl font-black text-white tracking-tight">
+              {Number(userUbuTokens).toFixed(1)} UBU
             </div>
-            <p className="text-[11px] text-purple-200/80 font-medium mt-0.5">
-              Keep shopping to earn more!
+            <p className="text-[10px] text-purple-200/90 font-medium mt-0.5 flex items-center gap-1">
+              <Bus className="w-3 h-3 text-sky-300" />
+              {userUbuTokens >= 20 ? "R20 Taxi Fare Ready!" : `${(20 - userUbuTokens).toFixed(1)} UBU to Taxi Fare`}
             </p>
           </div>
 

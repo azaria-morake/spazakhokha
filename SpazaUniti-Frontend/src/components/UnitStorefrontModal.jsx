@@ -11,7 +11,10 @@ import {
   Briefcase, 
   Info,
   CheckCircle2,
-  MessageCircle
+  MessageCircle,
+  Coins,
+  Bus,
+  Sparkles
 } from 'lucide-react';
 import { fetchUnitDetail } from '../services/api';
 
@@ -116,6 +119,23 @@ export default function UnitStorefrontModal({
   const loyaltyReward = liveDetails?.loyalty_program?.reward_description || "Buy 9 loaves of Albany bread, get the 10th loaf FREE! Tracked automatically on Spaza Uniti.";
   const stampsRequired = liveDetails?.loyalty_program?.stamps_required || 10;
   const earnedStamps = Math.min(currentCustomer?.stamps || 6, stampsRequired);
+  const unitId = shop.unit_id || shop.id;
+  const userUnitTokens = currentCustomer?.ubuntu_tokens?.[unitId] ?? 24.0;
+  const activePrograms = (liveDetails?.loyalty_programs && liveDetails.loyalty_programs.length > 0)
+    ? liveDetails.loyalty_programs
+    : [
+        {
+          id: "LOYALTY-001",
+          title: loyaltyTitle,
+          community_pact: loyaltyReward,
+          target_item: "Albany Superior White Bread",
+          item_price_zar: 16.00,
+          reward_threshold_ubu: 16.00,
+          token_rate_per_event: 1.78,
+          stamps_or_count: stampsRequired,
+          active: true
+        }
+      ];
 
   return (
     <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -182,7 +202,7 @@ export default function UnitStorefrontModal({
             }`}
           >
             <Trophy className="w-4 h-4 text-amber-400" />
-            <span>Bread Loyalty Club</span>
+            <span>Community Loyalty Pacts ({activePrograms.length})</span>
           </button>
           <button
             onClick={() => setActiveTab('gigs')}
@@ -249,50 +269,90 @@ export default function UnitStorefrontModal({
           )}
 
           {activeTab === 'loyalty' && (
-            <div className="bg-[#182130] border border-[#25334a] rounded-2xl p-5 text-center">
-              <div className="flex items-center justify-between mb-4">
-                <div className="text-left">
-                  <h4 className="text-base font-bold text-white">{loyaltyTitle}</h4>
-                  <p className="text-xs text-slate-400">Tracked automatically for @{currentCustomer?.username || 'mannini'}</p>
+            <div className="space-y-4">
+              {/* Token Balance Header */}
+              <div className="bg-[#182130] border border-[#25334a] rounded-2xl p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-300">
+                    <Coins className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-white">Your Ubuntu Tokens at this Unit</h4>
+                    <p className="text-xs text-slate-400">1 UBU = R1.00 ZAR • Unit-Scoped Community Rewards</p>
+                  </div>
                 </div>
-                <span className="bg-amber-400/20 text-amber-300 border border-amber-400/40 text-xs font-bold px-3 py-1 rounded-full">
-                  {earnedStamps} / {stampsRequired} Stamps Collected
-                </span>
+                <div className="text-right">
+                  <span className="text-lg font-black text-amber-400 block">{Number(userUnitTokens).toFixed(2)} UBU</span>
+                  <span className="text-[11px] text-emerald-400 font-semibold flex items-center gap-1 justify-end">
+                    <Bus className="w-3.5 h-3.5" />
+                    {userUnitTokens >= 20 ? "R20 Taxi Cash-Out Ready" : `${(20 - userUnitTokens).toFixed(2)} to Taxi Fare`}
+                  </span>
+                </div>
               </div>
 
-              {/* Stamps Grid */}
-              <div className="grid grid-cols-5 gap-3 my-5 p-4 bg-[#101622] rounded-xl border border-[#232f44]">
-                {[...Array(stampsRequired)].map((_, i) => {
-                  const stampNum = i + 1;
-                  const isFilled = stampNum <= earnedStamps;
-                  const isReward = stampNum === stampsRequired;
-
-                  return (
-                    <div
-                      key={stampNum}
-                      className={`aspect-square rounded-full flex flex-col items-center justify-center font-bold text-xs transition-all ${
-                        isFilled
-                          ? isReward
-                            ? 'bg-amber-500 text-slate-950 ring-4 ring-amber-400/30'
-                            : 'bg-emerald-600 text-white shadow-md'
-                          : 'border-2 border-dashed border-slate-700 text-slate-600 bg-slate-900/50'
-                      }`}
-                    >
-                      {isFilled ? (
-                        isReward ? <Trophy className="w-5 h-5 text-slate-950" /> : <CheckCircle2 className="w-5 h-5" />
-                      ) : (
-                        <span>#{stampNum}</span>
-                      )}
+              {/* Active Community Loyalty Pacts */}
+              <div className="space-y-3">
+                {activePrograms.map(prog => (
+                  <div key={prog.id} className="bg-[#182130] border border-[#25334a] rounded-2xl p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <div>
+                        <span className="bg-amber-400/20 text-amber-300 border border-amber-400/30 text-[10px] font-bold px-2 py-0.5 rounded uppercase">
+                          {prog.program_type ? prog.program_type.replace(/_/g, " ") : "COMMUNITY PACT"}
+                        </span>
+                        <h5 className="text-sm font-bold text-white mt-1">{prog.title}</h5>
+                      </div>
+                      <span className="text-xs font-black text-emerald-400 bg-emerald-950/60 border border-emerald-500/30 px-2.5 py-1 rounded-full">
+                        +{Number(prog.token_rate_per_event || 1.78).toFixed(2)} UBU / item
+                      </span>
                     </div>
-                  );
-                })}
+
+                    <p className="text-xs text-slate-300 bg-[#111722] p-2.5 rounded-xl border border-[#222e42] my-2.5">
+                      "{prog.community_pact || prog.reward_description}"
+                    </p>
+
+                    <div className="flex items-center justify-between text-xs text-slate-400">
+                      <span>Reward Target: <strong>{Number(prog.reward_threshold_ubu || 16.0).toFixed(2)} UBU</strong> ({prog.target_item || "Staples"})</span>
+                      <span className="text-emerald-400 font-bold">
+                        {userUnitTokens >= (prog.reward_threshold_ubu || 16.0) ? "Reward Milestone Unlocked!" : `${Math.min(100, ((userUnitTokens / (prog.reward_threshold_ubu || 16.0)) * 100)).toFixed(0)}% Progress`}
+                      </span>
+                    </div>
+                  </div>
+                ))}
               </div>
 
-              <div className="bg-amber-950/30 border border-amber-500/30 rounded-xl p-3 text-left flex items-center gap-3">
-                <Trophy className="w-6 h-6 text-amber-400 shrink-0" />
-                <p className="text-xs text-amber-200">
-                  <strong>Reward Milestone:</strong> {loyaltyReward}
-                </p>
+              {/* Bread Club Stamp Card */}
+              <div className="bg-[#182130] border border-[#25334a] rounded-2xl p-4 text-center">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-bold text-white uppercase tracking-wider">Daily Bread Stamp Card</span>
+                  <span className="text-xs text-amber-400 font-bold">{earnedStamps} / {stampsRequired} Stamps</span>
+                </div>
+
+                <div className="grid grid-cols-5 gap-2.5 my-3 p-3 bg-[#101622] rounded-xl border border-[#232f44]">
+                  {[...Array(stampsRequired)].map((_, i) => {
+                    const stampNum = i + 1;
+                    const isFilled = stampNum <= earnedStamps;
+                    const isReward = stampNum === stampsRequired;
+
+                    return (
+                      <div
+                        key={stampNum}
+                        className={`aspect-square rounded-full flex flex-col items-center justify-center font-bold text-xs transition-all ${
+                          isFilled
+                            ? isReward
+                              ? 'bg-amber-500 text-slate-950 ring-4 ring-amber-400/30'
+                              : 'bg-emerald-600 text-white shadow-md'
+                            : 'border-2 border-dashed border-slate-700 text-slate-600 bg-slate-900/50'
+                        }`}
+                      >
+                        {isFilled ? (
+                          isReward ? <Trophy className="w-4 h-4 text-slate-950" /> : <CheckCircle2 className="w-4 h-4" />
+                        ) : (
+                          <span>#{stampNum}</span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           )}

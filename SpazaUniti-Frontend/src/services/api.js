@@ -108,3 +108,31 @@ export async function topUpWallet(username, amount, description = "Top Up") {
   return await res.json();
 }
 
+export async function cashoutUbuntuTokens(username, unitId = "unit-104", amount = 20.00, purpose = "Taxi / Transportation Allowance") {
+  const clean = username.replace(/^@/, '');
+  const res = await fetch(`${API_BASE}/api/wallets/${clean}/cashout`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ unit_id: unitId, amount, purpose })
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.detail || "Cash-out failed");
+  }
+  return await res.json();
+}
+
+export async function spendUbuntuTokens(username, unitId = "unit-104", amount = 16.00, purpose = "Marketplace Cart Discount") {
+  const clean = username.replace(/^@/, '');
+  const res = await fetch(`${API_BASE}/api/wallets/${clean}/spend-tokens`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ unit_id: unitId, amount, purpose })
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.detail || "Token redemption failed");
+  }
+  return await res.json();
+}
+

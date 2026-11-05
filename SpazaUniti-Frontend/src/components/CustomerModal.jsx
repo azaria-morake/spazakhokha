@@ -7,10 +7,13 @@ import {
   ShieldCheck, 
   X, 
   Check, 
-  AlertCircle 
+  AlertCircle,
+  Coins,
+  Bus,
+  Sparkles
 } from 'lucide-react';
 import { DEMO_CUSTOMERS } from '../data/mockData';
-import { checkUsernameAvailability, registerCustomer, topUpWallet } from '../services/api';
+import { checkUsernameAvailability, registerCustomer, topUpWallet, cashoutUbuntuTokens } from '../services/api';
 
 export default function CustomerModal({
   isOpen,
@@ -26,8 +29,28 @@ export default function CustomerModal({
   const [feedback, setFeedback] = useState(null);
   const [topUpAmount, setTopUpAmount] = useState('100.00');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [cashoutMsg, setCashoutMsg] = useState(null);
 
   if (!isOpen) return null;
+
+  const totalTokens = currentCustomer.total_ubuntu_tokens ?? 
+    (currentCustomer.ubuntu_tokens ? Object.values(currentCustomer.ubuntu_tokens).reduce((a, b) => a + b, 0) : 24.0);
+  const unit104Tokens = currentCustomer.ubuntu_tokens?.["unit-104"] ?? 24.0;
+  const isCashoutEligible = totalTokens >= 20.0 || unit104Tokens >= 20.0;
+
+  const handleCashoutSubmit = async () => {
+    setIsSubmitting(true);
+    setCashoutMsg(null);
+    try {
+      const res = await cashoutUbuntuTokens(currentCustomer.username, "unit-104", 20.0, "Taxi Fare to Job Interview");
+      setCashoutMsg(res.receipt_message || "R20.00 cashed out to spendable wallet!");
+      await onRefreshCustomer();
+    } catch (err) {
+      alert("Cash-out error: " + err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const handleUsernameChange = async (e) => {
     const val = e.target.value.trim();
@@ -169,7 +192,65 @@ export default function CustomerModal({
                 </div>
                 <div className="flex items-center justify-center gap-2 text-xs text-slate-400">
                   <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                  <span>RFC Open Payments Compatible</span>
+                  <span>RFC Open Payments Compatible (ZAR)</span>
+                </div>
+              </div>
+
+              {/* Ubuntu Tokens Ledger */}
+              <div className="bg-[#182130] border border-[#25334a] rounded-2xl p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <Coins className="w-4 h-4 text-amber-400" />
+                    <span className="text-xs font-bold text-white uppercase tracking-wider">Ubuntu Tokens</span>
+                  </div>
+                  <span className="text-xs font-black text-amber-400">
+                    {Number(totalTokens).toFixed(2)} UBU
+                  </span>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between bg-[#101622] p-2.5 rounded-xl text-xs border border-[#222e42]">
+                    <div>
+                      <strong className="text-slate-200 block">Khumalo Spaza Store</strong>
+                      <span className="text-slate-500 font-mono text-[10px]">Unit #104 (1 UBU = R1.00)</span>
+                    </div>
+                    <span className="font-mono font-bold text-emerald-400">{Number(unit104Tokens).toFixed(2)} UBU</span>
+                  </div>
+                </div>
+
+                {/* R20 Taxi / Transport Cash-Out Feature */}
+                <div className="mt-4 pt-3 border-t border-[#222e42]">
+                  <div className="flex items-start gap-2 mb-2.5">
+                    <Bus className="w-4 h-4 text-sky-400 shrink-0 mt-0.5" />
+                    <div>
+                      <h5 className="text-xs font-bold text-white">R20 Taxi & Transport Allowance</h5>
+                      <p className="text-[11px] text-slate-400">
+                        {isCashoutEligible
+                          ? "You have >= 20 UBU! Cash out R20.00 directly to spendable cash for taxi fare or airtime."
+                          : "Reach 20.00 UBU to unlock open-ramp taxi fare cash-out."}
+                      </p>
+                    </div>
+                  </div>
+
+                  {cashoutMsg && (
+                    <div className="mb-2 p-2 bg-emerald-950/60 border border-emerald-500/40 rounded-xl text-xs text-emerald-300">
+                      {cashoutMsg}
+                    </div>
+                  )}
+
+                  <button
+                    type="button"
+                    disabled={!isCashoutEligible || isSubmitting}
+                    onClick={handleCashoutSubmit}
+                    className={`w-full py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all ${
+                      isCashoutEligible
+                        ? "bg-gradient-to-r from-sky-600 to-emerald-600 hover:from-sky-500 hover:to-emerald-500 text-white shadow-lg cursor-pointer"
+                        : "bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700"
+                    }`}
+                  >
+                    <ArrowUpRight className="w-4 h-4" />
+                    <span>Cash Out R20 Taxi Fare (Open Payments)</span>
+                  </button>
                 </div>
               </div>
 
