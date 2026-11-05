@@ -576,164 +576,271 @@
 
     <!-- SPAZA UNITI OFFERINGS VIEW (PROMOTIONS & LOYALTY) -->
     <section id="offeringsPage" class="page-section" hidden>
-      <div class="section-heading">
+      <!-- Page Header with ShadCN breadcrumb and actions -->
+      <div class="offerings-page-header">
         <div>
-          <p class="eyebrow">SPAZA UNITI ECOSYSTEM</p>
-          <h2>Unit #104 Offerings & Community Discovery</h2>
-          <p class="muted">Promotions and loyalty programs published to local shoppers on the Spaza Uniti platform.</p>
+          <div class="breadcrumb-bar">
+            <span>SPAZA UNITI ECOSYSTEM</span>
+            <span class="breadcrumb-separator">/</span>
+            <span>NODE #104 MEADOWLANDS</span>
+          </div>
+          <h2>Unit Offerings & Community Pacts</h2>
+          <p class="muted">Manage community loyalty contracts, grocery specials, and live broadcast parameters for nearby township shoppers.</p>
         </div>
-        <button class="primary-btn" id="newPromoBtn">
-          + Launch Promotion
-        </button>
-      </div>
-
-      <div class="uniti-banner">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
-          <div>
-            <div class="uniti-badge">
-              <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24">
-                <circle cx="12" cy="12" r="10" />
-                <line x1="2" x2="22" y1="12" y2="12" />
-                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-              </svg>
-              Spaza Uniti Network Node
-            </div>
-            <p style="margin-top: 6px;">Your shop is discoverable by customers within their selected radius. When broadcast is active, your specials, bread loyalty club, and gigs are live on the customer Uniti app.</p>
-          </div>
-          <div class="broadcast-control-box">
-            <div class="broadcast-toggle-wrap">
-              <span id="broadcastToggleLabel" class="broadcast-state-text">Broadcast: <strong>ACTIVE</strong></span>
-              <label class="switch-toggle" title="Toggle broadcast to Spaza Uniti network">
-                <input type="checkbox" id="unitiBroadcastSwitch" checked>
-                <span class="slider round"></span>
-              </label>
-            </div>
-            <span id="broadcastSubtext" class="muted-small" style="display: block; margin-top: 4px; font-size: 0.72rem;">Visible to shoppers nearby</span>
-          </div>
+        <div class="header-action-group">
+          <button class="outline-btn" id="newPromoBtn" type="button">
+            <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24">
+              <path d="m20.59 13.41-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+              <line x1="7" y1="7" x2="7.01" y2="7"/>
+            </svg>
+            + New Special
+          </button>
+          <button class="primary-btn" id="newLoyaltyBtn" type="button">
+            <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24">
+              <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+            </svg>
+            + New Community Pact
+          </button>
         </div>
       </div>
 
-
-      <!-- Add Promotion Form Drawer -->
-      <div id="promoFormContainer" hidden>
-        <form id="promoForm" class="customer-form">
-          <h3>Create a New Promotion for Spaza Uniti</h3>
-          <div class="form-row">
-            <div>
-              <label for="promoTitle">Promotion Title</label>
-              <input id="promoTitle" type="text" required placeholder="e.g. Weekend Albany Superior Special">
-            </div>
-            <div>
-              <label for="promoCategory">Category</label>
-              <select id="promoCategory">
-                <option value="Bakery">Bakery & Bread</option>
-                <option value="Staples">Staples & Maize</option>
-                <option value="Beverages">Beverages & Cold Drinks</option>
-                <option value="Dairy">Dairy & Milk</option>
-                <option value="Snacks">Snacks & Sweets</option>
-                <option value="Household">Household & Cleaning</option>
-              </select>
-            </div>
+      <!-- KPI Stat Cards (Geckoboard / ShadCN Panel Grid) -->
+      <div class="shadcn-kpi-grid">
+        <div class="shadcn-kpi-card">
+          <div class="kpi-card-header">
+            <span class="kpi-label">Active Loyalty Pacts</span>
+            <span class="kpi-icon-wrap emerald">
+              <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+            </span>
           </div>
-
-          <div class="form-row">
-            <div>
-              <label for="promoOriginalPrice">Normal Price (R)</label>
-              <input id="promoOriginalPrice" type="number" step="0.50" min="1" placeholder="19.00">
-            </div>
-            <div>
-              <label for="promoDiscountPrice">Special / Promo Price (R)</label>
-              <input id="promoDiscountPrice" type="number" step="0.50" min="1" required placeholder="16.00">
-            </div>
-            <div>
-              <label for="promoDays">Duration (Days)</label>
-              <input id="promoDays" type="number" min="1" max="30" value="3">
-            </div>
+          <div class="kpi-value-row">
+            <h3 id="kpiActivePacts">4 Active</h3>
+            <span class="kpi-pill success">Live on Uniti</span>
           </div>
+          <p class="kpi-meta">Unit-scoped token contracts</p>
+        </div>
 
-          <div class="form-actions">
-            <button class="primary-btn" type="submit">Broadcast to Spaza Uniti</button>
-            <button class="secondary-btn" type="button" id="cancelPromoBtn">Cancel</button>
+        <div class="shadcn-kpi-card">
+          <div class="kpi-card-header">
+            <span class="kpi-label">Ubuntu Token Parity</span>
+            <span class="kpi-icon-wrap purple">
+              <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><line x1="12" y1="6" x2="12" y2="18"/></svg>
+            </span>
           </div>
-        </form>
+          <div class="kpi-value-row">
+            <h3>1 UBU = R1.00</h3>
+            <span class="kpi-pill purple">Pegged 1:1</span>
+          </div>
+          <p class="kpi-meta">Min. R20 taxi off-ramp enabled</p>
+        </div>
+
+        <div class="shadcn-kpi-card">
+          <div class="kpi-card-header">
+            <span class="kpi-label">Live Specials Broadcast</span>
+            <span class="kpi-icon-wrap amber">
+              <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><path d="m20.59 13.41-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+            </span>
+          </div>
+          <div class="kpi-value-row">
+            <h3 id="kpiActiveSpecials">2 Specials</h3>
+            <span class="kpi-pill amber">Up to 18% Off</span>
+          </div>
+          <p class="kpi-meta">Broadcasted to nearby shoppers</p>
+        </div>
+
+        <div class="shadcn-kpi-card">
+          <div class="kpi-card-header">
+            <span class="kpi-label">Broadcast Beacon</span>
+            <span class="kpi-icon-wrap blue">
+              <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+            </span>
+          </div>
+          <div class="kpi-value-row">
+            <h3 id="kpiBroadcastState">Node Active</h3>
+            <label class="switch-toggle" title="Toggle broadcast">
+              <input type="checkbox" id="unitiBroadcastSwitch" checked>
+              <span class="slider round"></span>
+            </label>
+          </div>
+          <p class="kpi-meta">Meadowlands Zone 2 • 350m radius</p>
+        </div>
       </div>
 
-      <!-- Active Offerings Grid -->
-      <div class="offerings-grid">
-        <!-- Promotions Column -->
-        <div class="offerings-column">
-          <div class="column-header">
-            <h3>Active Promotions & Discounts</h3>
-            <span class="badge-count" id="promoCountBadge">1 active</span>
-          </div>
-          <div id="promotionsContainer" class="promo-cards-list">
-            <!-- Dynamic promotion cards injected here -->
-          </div>
+      <!-- Tabulation Navigation (ShadCN Segmented Tabs & Toolbar) -->
+      <div class="shadcn-tabs-bar">
+        <div class="tabs-list" role="tablist">
+          <button class="tab-trigger active" data-tab="all" role="tab" type="button">
+            <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+            All Offerings
+          </button>
+          <button class="tab-trigger" data-tab="loyalty" role="tab" type="button">
+            <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+            Community Loyalty Pacts
+            <span class="tab-counter-badge" id="tabLoyaltyCount">4</span>
+          </button>
+          <button class="tab-trigger" data-tab="promotions" role="tab" type="button">
+            <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><path d="m20.59 13.41-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+            Live Specials & Promos
+            <span class="tab-counter-badge" id="tabPromosCount">2</span>
+          </button>
+          <button class="tab-trigger" data-tab="preview" role="tab" type="button">
+            <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+            Storefront Customer Preview
+          </button>
         </div>
 
-        <!-- Loyalty Programs Column -->
-        <div class="offerings-column">
-          <div class="column-header">
-            <div>
-              <h3>Community Loyalty Pacts</h3>
-              <p class="muted-small">Ubuntu Tokens (1 UBU = R1.00 ZAR) • Unit-Scoped • R20 Taxi Cash-Out</p>
-            </div>
-            <button class="primary-btn btn-sm" id="newLoyaltyBtn">
-              + New Community Pact
-            </button>
+        <!-- Table View Options / Filter Toolbar -->
+        <div class="table-action-toolbar">
+          <div class="search-box">
+            <svg class="ui-icon ui-icon-xs search-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <input type="text" id="offeringsSearchInput" placeholder="Filter pacts, products, or categories...">
           </div>
-
-          <!-- Quick Township Presets -->
-          <div class="loyalty-presets-bar">
-            <span class="preset-label">Quick Presets:</span>
-            <button type="button" class="preset-pill" data-preset="bread">Daily Bread Club</button>
-            <button type="button" class="preset-pill" data-preset="sassa">SASSA Pensioner Perk</button>
-            <button type="button" class="preset-pill" data-preset="tab">Tab Settlement Hero</button>
-          </div>
-
-          <!-- Dynamic Loyalty Program Cards -->
-          <div class="loyalty-programs-list" id="loyaltyProgramsContainer">
-            <!-- Dynamic cards injected here -->
-          </div>
+          <select id="offeringsFilterSelect" class="shadcn-select-compact">
+            <option value="all">All Statuses</option>
+            <option value="active">Active Only</option>
+            <option value="paused">Paused Only</option>
+          </select>
         </div>
+      </div>
 
-          <!-- Customer Discovery Preview -->
-          <div class="customer-preview-box">
-            <h4>
-              <svg class="ui-icon ui-icon-sm" viewBox="0 0 24 24">
-                <rect width="14" height="20" x="5" y="2" rx="2" ry="2" />
-                <line x1="12" x2="12.01" y1="18" y2="18" />
-              </svg>
-              Customer App Preview (Spaza Uniti)
-            </h4>
-            <p class="muted-small">How township shoppers see Unit #104 in their radius:</p>
-            <div class="preview-card">
-              <div class="preview-unit-header">
-                <strong>Unit #104 — Mama Zola Spaza</strong>
-                <span class="distance-pill">
-                  <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24">
-                    <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
-                    <circle cx="12" cy="10" r="3" />
-                  </svg>
-                  350m away
-                </span>
+      <!-- TAB CONTENT PANELS -->
+      <div class="tab-content-area">
+        <!-- GROUP 1: COMMUNITY LOYALTY PACTS (MONDAY.COM & SHADCN TABLE) -->
+        <div class="shadcn-panel offerings-tab-section" id="loyaltySectionWrapper">
+          <div class="panel-group-header loyalty-group">
+            <div class="group-title-row">
+              <span class="group-indicator emerald"></span>
+              <div class="group-title-info">
+                <h3>Community Loyalty Pacts</h3>
+                <span class="group-badge emerald" id="loyaltyGroupBadge">4 Pacts</span>
               </div>
-              <p class="preview-text">"Meadowlands Zone 2 • Accepts Open Payments & ILP Wallets"</p>
-              <div class="preview-chips">
-                <span class="preview-chip">
-                  <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24">
-                    <path d="m20.59 13.41-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
-                  </svg>
-                  15% off Albany Bread
-                </span>
-                <span class="preview-chip">
-                  <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24">
-                    <rect x="3" y="8" width="18" height="4" rx="1" />
-                    <path d="M12 8v13" />
-                    <path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7" />
-                  </svg>
-                  Bread Stamp Club
-                </span>
+            </div>
+            <div class="group-header-right">
+              <div class="quick-presets-pill-group">
+                <span class="preset-label">Templates:</span>
+                <button type="button" class="preset-pill" data-preset="bread">Daily Bread Club</button>
+                <button type="button" class="preset-pill" data-preset="sassa">SASSA Pensioner Perk</button>
+                <button type="button" class="preset-pill" data-preset="tab">Tab Settlement Hero</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="shadcn-table-wrap">
+            <table class="shadcn-table" id="loyaltyPactsTable">
+              <thead>
+                <tr>
+                  <th style="width: 30%;">Pact Name & Community Promise</th>
+                  <th style="width: 17%;">Target Product</th>
+                  <th style="width: 13%;">Milestone Reward</th>
+                  <th style="width: 12%;">Earn Rate</th>
+                  <th style="width: 12%;">Milestones Req.</th>
+                  <th style="width: 8%;">Status</th>
+                  <th style="width: 8%; text-align: right;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="loyaltyTableBody">
+                <!-- Injected via renderLoyaltyPrograms() -->
+              </tbody>
+            </table>
+          </div>
+          <div class="table-summary-footer">
+            <span class="summary-left" id="loyaltySummaryText">Showing 4 community loyalty contracts</span>
+            <span class="summary-right">Pegged at 1 UBU = R1.00 ZAR • Unit-Scoped</span>
+          </div>
+        </div>
+
+        <!-- GROUP 2: LIVE SPECIALS & PROMOTIONS (MONDAY.COM & SHADCN TABLE) -->
+        <div class="shadcn-panel offerings-tab-section" id="promotionsSectionWrapper">
+          <div class="panel-group-header promo-group">
+            <div class="group-title-row">
+              <span class="group-indicator amber"></span>
+              <div class="group-title-info">
+                <h3>Live Specials & Discount Promotions</h3>
+                <span class="group-badge amber" id="promoGroupBadge">2 Specials</span>
+              </div>
+            </div>
+            <div class="group-header-right">
+              <button class="outline-btn btn-sm" id="inlineNewPromoBtn" type="button">
+                + Add Special
+              </button>
+            </div>
+          </div>
+
+          <div class="shadcn-table-wrap">
+            <table class="shadcn-table" id="promotionsTable">
+              <thead>
+                <tr>
+                  <th style="width: 32%;">Special Title & Category</th>
+                  <th style="width: 13%;">Shelf Price</th>
+                  <th style="width: 13%;">Promo Price</th>
+                  <th style="width: 12%;">Discount</th>
+                  <th style="width: 12%;">Duration</th>
+                  <th style="width: 10%;">Network</th>
+                  <th style="width: 8%; text-align: right;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="promotionsTableBody">
+                <!-- Injected via renderPromotions() -->
+              </tbody>
+            </table>
+          </div>
+          <div class="table-summary-footer">
+            <span class="summary-left" id="promoSummaryText">Showing 2 broadcasted specials</span>
+            <span class="summary-right">Visible to shoppers within 350m radius</span>
+          </div>
+        </div>
+
+        <!-- GROUP 3: CUSTOMER DISCOVERY & STOREFRONT PREVIEW PANEL -->
+        <div class="shadcn-panel offerings-tab-section" id="previewSectionWrapper">
+          <div class="panel-group-header preview-group">
+            <div class="group-title-row">
+              <span class="group-indicator blue"></span>
+              <div class="group-title-info">
+                <h3>Customer App Storefront Preview</h3>
+                <span class="group-badge blue">Mobile View</span>
+              </div>
+            </div>
+          </div>
+          <div class="preview-panel-content">
+            <div class="preview-explanation">
+              <p class="muted-small">Here is how your spaza node appears to township patrons within their discovery radius on the Spaza Uniti React Marketplace:</p>
+            </div>
+            <div class="customer-preview-box">
+              <div class="preview-card">
+                <div class="preview-unit-header">
+                  <div>
+                    <strong>Unit #104 — Mama Zola Spaza</strong>
+                    <p class="preview-tagline">"Meadowlands Zone 2 • Accepts Open Payments & ILP Wallets"</p>
+                  </div>
+                  <span class="distance-pill">
+                    <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24">
+                      <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+                      <circle cx="12" cy="10" r="3" />
+                    </svg>
+                    350m away
+                  </span>
+                </div>
+                <div class="preview-chips">
+                  <span class="preview-chip">
+                    <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24">
+                      <path d="m20.59 13.41-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+                    </svg>
+                    15% off Albany Bread
+                  </span>
+                  <span class="preview-chip">
+                    <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24">
+                      <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
+                    </svg>
+                    Daily Bread Stamp Club
+                  </span>
+                  <span class="preview-chip">
+                    <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24">
+                      <circle cx="12" cy="12" r="10"/>
+                      <polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                    SASSA Pensioner Perk
+                  </span>
+                </div>
               </div>
             </div>
           </div>
@@ -1028,81 +1135,168 @@
     </div>
   </div>
 
-  <!-- Community Loyalty Pact Creator Modal -->
-  <div class="modal-backdrop" id="loyaltyModalBackdrop" hidden>
-    <div class="op-modal" style="max-width: 540px;">
-      <div class="op-modal-header">
-        <div class="op-modal-title">
-          <span class="op-icon">
-            <svg class="ui-icon ui-icon-lg" viewBox="0 0 24 24" style="stroke: #16a34a; fill: #dcfce7;">
+  <!-- Community Loyalty Pact Creator Modal (ShadCN Dialog Pattern) -->
+  <div class="op-modal-backdrop" id="loyaltyModalBackdrop" hidden>
+    <div class="shadcn-dialog" style="max-width: 580px;">
+      <div class="shadcn-dialog-header">
+        <div class="dialog-title-group">
+          <span class="dialog-icon-badge emerald">
+            <svg class="ui-icon ui-icon-md" viewBox="0 0 24 24">
               <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
             </svg>
           </span>
           <div>
             <h3>Create Community Loyalty Pact</h3>
-            <p class="muted-small">Ubuntu Tokens (1 UBU = R1.00 ZAR) • Unit-Scoped</p>
+            <p class="dialog-description">Configure an informal reciprocity pact. Mkhulu maps your target product to Ubuntu Tokens (1 UBU = R1.00 ZAR).</p>
           </div>
         </div>
-        <button class="modal-close-btn" id="closeLoyaltyModalBtn">&times;</button>
+        <button class="modal-close-btn" id="closeLoyaltyModalBtn" type="button">&times;</button>
       </div>
 
-      <div class="op-modal-body">
-        <form id="loyaltyForm" class="stacked-form">
-          <div class="form-group">
-            <label for="loyaltyPactTitle">Program Name</label>
-            <input type="text" id="loyaltyPactTitle" placeholder="e.g. Daily Bread Stamp Club" required />
+      <div class="shadcn-dialog-body">
+        <!-- Presets Bar -->
+        <div class="modal-presets-banner">
+          <span class="preset-label">Templates:</span>
+          <button type="button" class="preset-pill" data-preset="bread">Daily Bread Club</button>
+          <button type="button" class="preset-pill" data-preset="sassa">SASSA Pensioner Perk</button>
+          <button type="button" class="preset-pill" data-preset="tab">Tab Settlement Hero</button>
+        </div>
+
+        <form id="loyaltyForm" class="shadcn-dialog-form">
+          <div class="form-grid-2">
+            <div class="form-field">
+              <label for="loyaltyPactTitle">Pact Name</label>
+              <input type="text" id="loyaltyPactTitle" placeholder="e.g. Daily Bread Stamp Club" required />
+            </div>
+            <div class="form-field">
+              <label for="loyaltyPactType">Pact Archetype</label>
+              <select id="loyaltyPactType">
+                <option value="STAPLE_ACCUMULATOR">Staple Frequency (e.g. 9 bread = 10th free)</option>
+                <option value="PENSIONER_SASSA_PERK">SASSA Pensioner Goodwill (Sugar, tea perk)</option>
+                <option value="TAB_REPAYMENT_BONUS">Tab Repayment Hero (Cashback / Airtime)</option>
+                <option value="CUSTOM_UBUNTU">Custom Ubuntu Community Pact</option>
+              </select>
+            </div>
           </div>
 
-          <div class="form-group">
-            <label for="loyaltyPactType">Program Archetype</label>
-            <select id="loyaltyPactType">
-              <option value="STAPLE_ACCUMULATOR">Staple Frequency (e.g. Buy 9 bread, get 10th free)</option>
-              <option value="PENSIONER_SASSA_PERK">SASSA Pensioner Goodwill (Sugar, tea, bread bonus)</option>
-              <option value="TAB_REPAYMENT_BONUS">Prompt Tab Repayment Hero (Cashback / Airtime)</option>
-              <option value="CUSTOM_UBUNTU">Custom Community Ubuntu Pact</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label for="loyaltyCommunityPact">Community Promise</label>
+          <div class="form-field">
+            <label for="loyaltyCommunityPact">Community Promise (Display Quote)</label>
             <textarea id="loyaltyCommunityPact" rows="2" placeholder="e.g. Buy 9 loaves of Albany bread, get the 10th loaf FREE! Tracked as Ubuntu Tokens." required></textarea>
           </div>
 
-          <div class="form-row">
-            <div class="form-group">
+          <div class="form-grid-2">
+            <div class="form-field">
               <label for="loyaltyTargetItem">Target Product</label>
               <input type="text" id="loyaltyTargetItem" value="Albany Superior White Bread" required />
             </div>
-            <div class="form-group">
+            <div class="form-field">
               <label for="loyaltyShelfPrice">Shelf Price (ZAR)</label>
               <input type="number" step="0.50" id="loyaltyShelfPrice" value="16.00" required />
             </div>
           </div>
 
-          <div class="form-group">
+          <div class="form-field">
             <label for="loyaltyStampsCount">Purchases / Milestones Required</label>
             <input type="number" id="loyaltyStampsCount" value="9" min="1" max="50" required />
           </div>
 
-          <!-- Real-Time Ubuntu Token Economics Preview -->
-          <div class="ubu-preview-box" id="ubuEconomicsPreview">
-            <div class="ubu-preview-row">
-              <span>Token Rate Earned:</span>
-              <strong id="previewTokenRate">+1.78 UBU / purchase</strong>
+          <!-- Real-Time Token Economics KPI Preview -->
+          <div class="token-economics-panel">
+            <div class="token-kpi-col">
+              <span class="token-kpi-label">Earn Rate</span>
+              <strong id="previewTokenRate" class="token-kpi-val emerald">+1.78 UBU / purchase</strong>
+              <small class="token-kpi-sub">Accrued per event</small>
             </div>
-            <div class="ubu-preview-row">
-              <span>Free Reward Milestone:</span>
-              <strong id="previewRewardMilestone">16.00 UBU (R16.00 value)</strong>
+            <div class="token-kpi-col">
+              <span class="token-kpi-label">Reward Milestone</span>
+              <strong id="previewRewardMilestone" class="token-kpi-val purple">16.00 UBU (R16.00)</strong>
+              <small class="token-kpi-sub">100% item value</small>
             </div>
-            <div class="ubu-preview-row">
-              <span>Community Off-Ramp:</span>
-              <span class="badge-tag live-badge">R20 Taxi Fare Cash-Out</span>
+            <div class="token-kpi-col">
+              <span class="token-kpi-label">Township Off-Ramp</span>
+              <strong class="token-kpi-val amber">R20 Taxi Fare</strong>
+              <small class="token-kpi-sub">&ge; 20 UBU cash-out</small>
             </div>
           </div>
 
-          <div style="margin-top: 18px; display: flex; justify-content: flex-end; gap: 10px;">
+          <div class="shadcn-dialog-footer">
             <button type="button" class="secondary-btn" id="cancelLoyaltyBtn">Cancel</button>
-            <button type="submit" class="primary-btn">Activate on Spaza Uniti</button>
+            <button type="submit" class="primary-btn">
+              <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24" style="stroke: white;">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              Activate on Spaza Uniti
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Promotion Creator Modal (ShadCN Dialog Pattern) -->
+  <div class="op-modal-backdrop" id="promoModalBackdrop" hidden>
+    <div class="shadcn-dialog" style="max-width: 540px;">
+      <div class="shadcn-dialog-header">
+        <div class="dialog-title-group">
+          <span class="dialog-icon-badge amber">
+            <svg class="ui-icon ui-icon-md" viewBox="0 0 24 24">
+              <path d="m20.59 13.41-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+              <line x1="7" y1="7" x2="7.01" y2="7" />
+            </svg>
+          </span>
+          <div>
+            <h3>Broadcast New Promotion</h3>
+            <p class="dialog-description">Publish a grocery special to nearby shoppers on Spaza Uniti within 350m radius.</p>
+          </div>
+        </div>
+        <button class="modal-close-btn" id="closePromoModalBtn" type="button">&times;</button>
+      </div>
+
+      <div class="shadcn-dialog-body">
+        <form id="promoForm" class="shadcn-dialog-form">
+          <div class="form-grid-2">
+            <div class="form-field">
+              <label for="promoTitle">Promotion Title</label>
+              <input id="promoTitle" type="text" required placeholder="e.g. Weekend Albany Superior Special">
+            </div>
+            <div class="form-field">
+              <label for="promoCategory">Category</label>
+              <select id="promoCategory">
+                <option value="Bakery">Bakery & Bread</option>
+                <option value="Staples">Staples & Maize</option>
+                <option value="Beverages">Beverages & Cold Drinks</option>
+                <option value="Dairy">Dairy & Milk</option>
+                <option value="Snacks">Snacks & Sweets</option>
+                <option value="Household">Household & Cleaning</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-grid-3">
+            <div class="form-field">
+              <label for="promoOriginalPrice">Normal Price (R)</label>
+              <input id="promoOriginalPrice" type="number" step="0.50" min="1" placeholder="19.00">
+            </div>
+            <div class="form-field">
+              <label for="promoDiscountPrice">Special Price (R)</label>
+              <input id="promoDiscountPrice" type="number" step="0.50" min="1" required placeholder="16.00">
+            </div>
+            <div class="form-field">
+              <label for="promoDays">Duration (Days)</label>
+              <input id="promoDays" type="number" min="1" max="30" value="3">
+            </div>
+          </div>
+
+          <div class="shadcn-dialog-footer">
+            <button type="button" class="secondary-btn" id="cancelPromoBtn">Cancel</button>
+            <button type="submit" class="primary-btn">
+              <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24" style="stroke: white;">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="2" x2="22" y1="12" y2="12" />
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+              </svg>
+              Broadcast to Spaza Uniti
+            </button>
           </div>
         </form>
       </div>

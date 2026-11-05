@@ -948,55 +948,52 @@ document.getElementById("triggerOpenPaymentsRepaymentBtn").addEventListener("cli
 // ----------------------------------------------------------------------------
 // Spaza Uniti Offerings & Promotions
 // ----------------------------------------------------------------------------
-function renderPromotions() {
-  const container = document.getElementById("promotionsContainer");
-  const countBadge = document.getElementById("promoCountBadge");
-  container.replaceChildren();
+// ----------------------------------------------------------------------------
+// Spaza Uniti Offerings & Tabulated Data Tables (ShadCN & Monday.com Pattern)
+// ----------------------------------------------------------------------------
 
-  const activePromos = promotions.filter(p => p.active);
-  countBadge.textContent = `${activePromos.length} active`;
+// Modal elements
+const loyaltyModalBackdrop = document.getElementById("loyaltyModalBackdrop");
+const newLoyaltyBtn = document.getElementById("newLoyaltyBtn");
+const closeLoyaltyModalBtn = document.getElementById("closeLoyaltyModalBtn");
+const cancelLoyaltyBtn = document.getElementById("cancelLoyaltyBtn");
+const loyaltyForm = document.getElementById("loyaltyForm");
 
-  activePromos.forEach(promo => {
-    const card = document.createElement("article");
-    card.className = "promo-card";
-    const origPrice = promo.original_price || promo.originalPrice || 20;
-    const promoPrice = promo.promo_price || promo.promoPrice || 16;
-    const discountPct = promo.discount_pct || promo.discountPct || 15;
-    const daysLeft = promo.days_left || promo.daysLeft || 3;
+const promoModalBackdrop = document.getElementById("promoModalBackdrop");
+const newPromoBtn = document.getElementById("newPromoBtn");
+const inlineNewPromoBtn = document.getElementById("inlineNewPromoBtn");
+const closePromoModalBtn = document.getElementById("closePromoModalBtn");
+const cancelPromoBtn = document.getElementById("cancelPromoBtn");
+const promoForm = document.getElementById("promoForm");
 
-    card.innerHTML = `
-      <div class="promo-header">
-        <div>
-          <span class="card-pill live-pill">Live on Spaza Uniti</span>
-          <h4 style="margin-top: 6px;">${escapeHtml(promo.title)}</h4>
-          <span class="muted-small">Category: ${escapeHtml(promo.category)}</span>
-        </div>
-        <span class="promo-badge">${discountPct}% OFF</span>
-      </div>
-      <div class="promo-prices">
-        <span class="promo-original">R${origPrice.toFixed(2)}</span>
-        <span class="promo-special">R${promoPrice.toFixed(2)}</span>
-      </div>
-      <div class="promo-footer">
-        <span><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24" style="vertical-align: -1px; margin-right: 3px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Expires in ${daysLeft} days</span>
-        <span style="color: #059669; font-weight: 600;"><svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24" style="vertical-align: -1px; margin-right: 2px;"><polyline points="20 6 9 17 4 12"/></svg> Visible to nearby shoppers</span>
-      </div>
-    `;
-    container.appendChild(card);
-  });
+function openLoyaltyModal() {
+  if (loyaltyModalBackdrop) loyaltyModalBackdrop.hidden = false;
+  updateUbuPreview();
+}
+function closeLoyaltyModal() {
+  if (loyaltyModalBackdrop) loyaltyModalBackdrop.hidden = true;
 }
 
-document.getElementById("newPromoBtn").addEventListener("click", () => {
-  document.getElementById("promoFormContainer").hidden = false;
-  document.getElementById("promoTitle").focus();
-});
+function openPromoModal() {
+  if (promoModalBackdrop) promoModalBackdrop.hidden = false;
+  const titleInput = document.getElementById("promoTitle");
+  if (titleInput) titleInput.focus();
+}
+function closePromoModal() {
+  if (promoModalBackdrop) promoModalBackdrop.hidden = true;
+  if (promoForm) promoForm.reset();
+}
 
-document.getElementById("cancelPromoBtn").addEventListener("click", () => {
-  document.getElementById("promoForm").reset();
-  document.getElementById("promoFormContainer").hidden = true;
-});
+newLoyaltyBtn?.addEventListener("click", openLoyaltyModal);
+closeLoyaltyModalBtn?.addEventListener("click", closeLoyaltyModal);
+cancelLoyaltyBtn?.addEventListener("click", closeLoyaltyModal);
 
-document.getElementById("promoForm").addEventListener("submit", async event => {
+newPromoBtn?.addEventListener("click", openPromoModal);
+inlineNewPromoBtn?.addEventListener("click", openPromoModal);
+closePromoModalBtn?.addEventListener("click", closePromoModal);
+cancelPromoBtn?.addEventListener("click", closePromoModal);
+
+promoForm?.addEventListener("submit", async event => {
   event.preventDefault();
   const title = document.getElementById("promoTitle").value.trim();
   const category = document.getElementById("promoCategory").value;
@@ -1027,8 +1024,7 @@ document.getElementById("promoForm").addEventListener("submit", async event => {
     addPromoLocally(title, category, originalPrice, promoPrice, days);
   }
 
-  event.target.reset();
-  document.getElementById("promoFormContainer").hidden = true;
+  closePromoModal();
   playSound("success");
   showToast(`Promotion "${title}" broadcast to Spaza Uniti shoppers!`, "globe");
 });
@@ -1049,6 +1045,117 @@ function addPromoLocally(title, category, originalPrice, promoPrice, days) {
   updateDashboardMetrics();
 }
 
+function renderPromotions() {
+  const tableBody = document.getElementById("promotionsTableBody");
+  const kpiSpecials = document.getElementById("kpiActiveSpecials");
+  const tabPromos = document.getElementById("tabPromosCount");
+  const groupBadge = document.getElementById("promoGroupBadge");
+  const summaryText = document.getElementById("promoSummaryText");
+
+  const filterStatus = document.getElementById("offeringsFilterSelect")?.value || "all";
+  const searchFilter = (document.getElementById("offeringsSearchInput")?.value || "").toLowerCase().trim();
+
+  let filtered = promotions.filter(promo => {
+    if (filterStatus === "active" && !promo.active) return false;
+    if (filterStatus === "paused" && promo.active) return false;
+    if (searchFilter) {
+      const match = (promo.title || "").toLowerCase().includes(searchFilter) ||
+                    (promo.category || "").toLowerCase().includes(searchFilter);
+      if (!match) return false;
+    }
+    return true;
+  });
+
+  const activeCount = promotions.filter(p => p.active).length;
+  if (kpiSpecials) kpiSpecials.textContent = `${activeCount} Specials`;
+  if (tabPromos) tabPromos.textContent = `${promotions.length}`;
+  if (groupBadge) groupBadge.textContent = `${activeCount} Live of ${promotions.length}`;
+  if (summaryText) summaryText.textContent = `Showing ${filtered.length} of ${promotions.length} broadcasted specials`;
+
+  if (!tableBody) return;
+  tableBody.replaceChildren();
+
+  if (filtered.length === 0) {
+    const emptyRow = document.createElement("tr");
+    emptyRow.innerHTML = `
+      <td colspan="7" class="shadcn-empty-row">
+        <div class="empty-state-mini">
+          <svg class="ui-icon ui-icon-md muted" viewBox="0 0 24 24">
+            <path d="m20.59 13.41-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+          </svg>
+          <p>No promotions match your search or filter.</p>
+        </div>
+      </td>
+    `;
+    tableBody.appendChild(emptyRow);
+    return;
+  }
+
+  filtered.forEach(promo => {
+    const tr = document.createElement("tr");
+    tr.className = `shadcn-table-row ${promo.active ? "" : "row-paused"}`;
+
+    const origPrice = Number(promo.original_price || promo.originalPrice || 20).toFixed(2);
+    const promoPrice = Number(promo.promo_price || promo.promoPrice || 16).toFixed(2);
+    const discountPct = promo.discount_pct || promo.discountPct || 15;
+    const daysLeft = promo.days_left || promo.daysLeft || 3;
+
+    tr.innerHTML = `
+      <td class="col-promo-title">
+        <div class="pact-cell-wrap">
+          <div class="pact-title-row">
+            <span class="pact-title">${escapeHtml(promo.title)}</span>
+            <span class="shadcn-badge category-badge">${escapeHtml(promo.category || 'General')}</span>
+          </div>
+        </div>
+      </td>
+      <td class="col-orig-price">
+        <span class="strikethrough-price">R${origPrice}</span>
+      </td>
+      <td class="col-promo-price">
+        <strong class="special-price-text">R${promoPrice}</strong>
+      </td>
+      <td class="col-discount">
+        <span class="shadcn-badge rose-badge font-bold">-${discountPct}% OFF</span>
+      </td>
+      <td class="col-duration">
+        <span class="shadcn-badge slate-badge">
+          <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24" style="margin-right: 3px;">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 16 14"/>
+          </svg>
+          ${daysLeft}d left
+        </span>
+      </td>
+      <td class="col-network">
+        <span class="status-pill status-active">
+          <span class="status-dot"></span>
+          Live on Uniti
+        </span>
+      </td>
+      <td class="col-actions" style="text-align: right;">
+        <div class="action-buttons-group">
+          <button type="button" class="shadcn-icon-btn delete-promo-btn danger" title="Delete Special" data-id="${promo.id}">
+            <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24">
+              <polyline points="3 6 5 6 21 6"/>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+            </svg>
+          </button>
+        </div>
+      </td>
+    `;
+
+    tr.querySelector(".delete-promo-btn").addEventListener("click", () => {
+      if (!confirm(`Delete promotion "${promo.title}"?`)) return;
+      promotions = promotions.filter(p => p.id !== promo.id);
+      renderPromotions();
+      showToast("Promotion removed.", "info");
+    });
+
+    tableBody.appendChild(tr);
+  });
+}
+
 async function fetchLoyaltyPrograms() {
   if (backendOnline) {
     try {
@@ -1067,60 +1174,129 @@ async function fetchLoyaltyPrograms() {
 }
 
 function renderLoyaltyPrograms() {
-  const container = document.getElementById("loyaltyProgramsContainer");
-  if (!container) return;
-  container.replaceChildren();
+  const tableBody = document.getElementById("loyaltyTableBody");
+  const kpiCount = document.getElementById("kpiActivePacts");
+  const tabCount = document.getElementById("tabLoyaltyCount");
+  const groupBadge = document.getElementById("loyaltyGroupBadge");
+  const summaryText = document.getElementById("loyaltySummaryText");
 
-  loyaltyPrograms.forEach(prog => {
-    const card = document.createElement("article");
-    card.className = `loyalty-card ${prog.active ? "" : "paused"}`;
+  const filterStatus = document.getElementById("offeringsFilterSelect")?.value || "all";
+  const searchFilter = (document.getElementById("offeringsSearchInput")?.value || "").toLowerCase().trim();
 
-    const typeLabel = prog.program_type ? prog.program_type.replace(/_/g, " ") : "COMMUNITY PACT";
+  let filtered = loyaltyPrograms.filter(prog => {
+    if (filterStatus === "active" && !prog.active) return false;
+    if (filterStatus === "paused" && prog.active) return false;
+    if (searchFilter) {
+      const match = (prog.title || "").toLowerCase().includes(searchFilter) ||
+                    (prog.target_item || "").toLowerCase().includes(searchFilter) ||
+                    (prog.community_pact || "").toLowerCase().includes(searchFilter) ||
+                    (prog.program_type || "").toLowerCase().includes(searchFilter);
+      if (!match) return false;
+    }
+    return true;
+  });
 
-    card.innerHTML = `
-      <div class="loyalty-top-row">
-        <div class="loyalty-title-wrap">
-          <span class="loyalty-type-badge">${typeLabel}</span>
-          <h4>${prog.title}</h4>
+  const activeCount = loyaltyPrograms.filter(p => p.active).length;
+  if (kpiCount) kpiCount.textContent = `${activeCount} Active`;
+  if (tabCount) tabCount.textContent = `${loyaltyPrograms.length}`;
+  if (groupBadge) groupBadge.textContent = `${activeCount} Active of ${loyaltyPrograms.length}`;
+  if (summaryText) summaryText.textContent = `Showing ${filtered.length} of ${loyaltyPrograms.length} community loyalty contracts`;
+
+  if (!tableBody) return;
+  tableBody.replaceChildren();
+
+  if (filtered.length === 0) {
+    const emptyRow = document.createElement("tr");
+    emptyRow.innerHTML = `
+      <td colspan="7" class="shadcn-empty-row">
+        <div class="empty-state-mini">
+          <svg class="ui-icon ui-icon-md muted" viewBox="0 0 24 24">
+            <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
+          </svg>
+          <p>No community loyalty pacts match your search or filter.</p>
         </div>
-        <span class="badge-tag ${prog.active ? "live-badge" : "paused-badge"}">
-          ${prog.active ? "Active" : "Paused"}
+      </td>
+    `;
+    tableBody.appendChild(emptyRow);
+    return;
+  }
+
+  filtered.forEach(prog => {
+    const tr = document.createElement("tr");
+    tr.className = `shadcn-table-row ${prog.active ? "" : "row-paused"}`;
+
+    const typeLabel = (prog.program_type || "COMMUNITY_PACT").replace(/_/g, " ");
+    const priceZar = Number(prog.item_price_zar || 16.0).toFixed(2);
+    const rewardUbu = Number(prog.reward_threshold_ubu || 16.0).toFixed(2);
+    const earnRate = Number(prog.token_rate_per_event || 1.78).toFixed(2);
+    const countReq = prog.stamps_or_count || prog.stamps_required || 9;
+
+    tr.innerHTML = `
+      <td class="col-pact">
+        <div class="pact-cell-wrap">
+          <div class="pact-title-row">
+            <span class="pact-title">${escapeHtml(prog.title)}</span>
+            <span class="shadcn-badge type-badge">${typeLabel}</span>
+          </div>
+          <p class="pact-promise-quote">"${escapeHtml(prog.community_pact || prog.reward_description || 'Community rewards on purchases.')}"</p>
+        </div>
+      </td>
+      <td class="col-target">
+        <div class="target-product-name">${escapeHtml(prog.target_item || 'General Staples')}</div>
+        <div class="target-product-price">R${priceZar} shelf</div>
+      </td>
+      <td class="col-reward">
+        <span class="shadcn-badge purple-badge font-semibold">
+          <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24" style="stroke: #7c3aed; margin-right: 3px;">
+            <circle cx="12" cy="12" r="10" />
+            <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8" />
+          </svg>
+          ${rewardUbu} UBU
         </span>
-      </div>
-
-      <div class="loyalty-pact-text">
-        "${prog.community_pact || prog.reward_description || "Community rewards on purchases."}"
-      </div>
-
-      <div class="loyalty-metrics-grid">
-        <div class="loyalty-metric-col">
-          <span>Target Item</span>
-          <strong>${prog.target_item || "Staples"}</strong>
+        <div class="table-subtext">R${rewardUbu} free milestone</div>
+      </td>
+      <td class="col-earn">
+        <span class="shadcn-badge green-badge">
+          +${earnRate} UBU
+        </span>
+        <div class="table-subtext">per purchase</div>
+      </td>
+      <td class="col-req">
+        <span class="shadcn-badge slate-badge">${countReq} ${countReq === 1 ? 'event' : 'purchases'}</span>
+        <div class="table-subtext offramp-subtext">
+          <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24" style="vertical-align: -1px; margin-right: 2px;">
+            <rect x="3" y="11" width="18" height="8" rx="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+          &ge; R20 Taxi Off-Ramp
         </div>
-        <div class="loyalty-metric-col">
-          <span>Earn Rate</span>
-          <strong>+${Number(prog.token_rate_per_event || 1.78).toFixed(2)} UBU</strong>
-        </div>
-        <div class="loyalty-metric-col">
-          <span>Reward Target</span>
-          <strong>${Number(prog.reward_threshold_ubu || 16.0).toFixed(2)} UBU</strong>
-        </div>
-      </div>
-
-      <div class="loyalty-card-actions">
-        <span class="muted-small">Unit-scoped • R20 Taxi Cash-Out</span>
-        <div style="display: flex; gap: 8px;">
-          <button type="button" class="secondary-btn btn-sm toggle-loyalty-btn" data-id="${prog.id}">
-            ${prog.active ? "Pause" : "Resume"}
+      </td>
+      <td class="col-status">
+        <span class="status-pill ${prog.active ? 'status-active' : 'status-paused'}">
+          <span class="status-dot"></span>
+          ${prog.active ? 'Active' : 'Paused'}
+        </span>
+      </td>
+      <td class="col-actions" style="text-align: right;">
+        <div class="action-buttons-group">
+          <button type="button" class="shadcn-icon-btn toggle-loyalty-btn" title="${prog.active ? 'Pause pact' : 'Resume pact'}" data-id="${prog.id}">
+            <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24">
+              ${prog.active 
+                ? '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>' 
+                : '<polygon points="5 3 19 12 5 21 5 3"/>'}
+            </svg>
           </button>
-          <button type="button" class="secondary-btn btn-sm delete-loyalty-btn" data-id="${prog.id}" style="color: #dc2626; border-color: #fca5a5;">
-            Delete
+          <button type="button" class="shadcn-icon-btn delete-loyalty-btn danger" title="Delete pact" data-id="${prog.id}">
+            <svg class="ui-icon ui-icon-xs" viewBox="0 0 24 24">
+              <polyline points="3 6 5 6 21 6"/>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+            </svg>
           </button>
         </div>
-      </div>
+      </td>
     `;
 
-    card.querySelector(".toggle-loyalty-btn").addEventListener("click", async () => {
+    tr.querySelector(".toggle-loyalty-btn").addEventListener("click", async () => {
       prog.active = !prog.active;
       renderLoyaltyPrograms();
       if (backendOnline) {
@@ -1133,7 +1309,7 @@ function renderLoyaltyPrograms() {
       showToast(`${prog.title} is now ${prog.active ? "Active" : "Paused"} on Spaza Uniti!`, "info");
     });
 
-    card.querySelector(".delete-loyalty-btn").addEventListener("click", async () => {
+    tr.querySelector(".delete-loyalty-btn").addEventListener("click", async () => {
       if (!confirm(`Delete "${prog.title}"?`)) return;
       loyaltyPrograms = loyaltyPrograms.filter(p => p.id !== prog.id);
       renderLoyaltyPrograms();
@@ -1147,28 +1323,9 @@ function renderLoyaltyPrograms() {
       showToast("Program deleted.", "info");
     });
 
-    container.appendChild(card);
+    tableBody.appendChild(tr);
   });
 }
-
-// Loyalty Modal Handlers
-const loyaltyModalBackdrop = document.getElementById("loyaltyModalBackdrop");
-const newLoyaltyBtn = document.getElementById("newLoyaltyBtn");
-const closeLoyaltyModalBtn = document.getElementById("closeLoyaltyModalBtn");
-const cancelLoyaltyBtn = document.getElementById("cancelLoyaltyBtn");
-const loyaltyForm = document.getElementById("loyaltyForm");
-
-function openLoyaltyModal() {
-  if (loyaltyModalBackdrop) loyaltyModalBackdrop.hidden = false;
-  updateUbuPreview();
-}
-function closeLoyaltyModal() {
-  if (loyaltyModalBackdrop) loyaltyModalBackdrop.hidden = true;
-}
-
-newLoyaltyBtn?.addEventListener("click", openLoyaltyModal);
-closeLoyaltyModalBtn?.addEventListener("click", closeLoyaltyModal);
-cancelLoyaltyBtn?.addEventListener("click", closeLoyaltyModal);
 
 function updateUbuPreview() {
   const priceInput = document.getElementById("loyaltyShelfPrice");
@@ -1180,7 +1337,7 @@ function updateUbuPreview() {
   const rateEl = document.getElementById("previewTokenRate");
   const rewardEl = document.getElementById("previewRewardMilestone");
   if (rateEl) rateEl.textContent = `+${rate} UBU / purchase`;
-  if (rewardEl) rewardEl.textContent = `${price.toFixed(2)} UBU (R${price.toFixed(2)} value)`;
+  if (rewardEl) rewardEl.textContent = `${price.toFixed(2)} UBU (R${price.toFixed(2)})`;
 }
 
 document.getElementById("loyaltyShelfPrice")?.addEventListener("input", updateUbuPreview);
@@ -1256,6 +1413,54 @@ loyaltyForm?.addEventListener("submit", async (e) => {
 
   showToast(`Pact "${title}" published and live on Spaza Uniti!`, "celebrate");
 });
+
+function setupOfferingsTabs() {
+  const tabTriggers = document.querySelectorAll(".shadcn-tabs-bar .tab-trigger");
+  const loyaltySection = document.getElementById("loyaltySectionWrapper");
+  const promosSection = document.getElementById("promotionsSectionWrapper");
+  const previewSection = document.getElementById("previewSectionWrapper");
+
+  tabTriggers.forEach(btn => {
+    btn.addEventListener("click", () => {
+      tabTriggers.forEach(t => t.classList.remove("active"));
+      btn.classList.add("active");
+      const tab = btn.dataset.tab;
+
+      if (tab === "all") {
+        if (loyaltySection) loyaltySection.hidden = false;
+        if (promosSection) promosSection.hidden = false;
+        if (previewSection) previewSection.hidden = false;
+      } else if (tab === "loyalty") {
+        if (loyaltySection) loyaltySection.hidden = false;
+        if (promosSection) promosSection.hidden = true;
+        if (previewSection) previewSection.hidden = true;
+      } else if (tab === "promotions") {
+        if (loyaltySection) loyaltySection.hidden = true;
+        if (promosSection) promosSection.hidden = false;
+        if (previewSection) previewSection.hidden = true;
+      } else if (tab === "preview") {
+        if (loyaltySection) loyaltySection.hidden = true;
+        if (promosSection) promosSection.hidden = true;
+        if (previewSection) previewSection.hidden = false;
+      }
+    });
+  });
+
+  const searchInput = document.getElementById("offeringsSearchInput");
+  const filterSelect = document.getElementById("offeringsFilterSelect");
+  if (searchInput) {
+    searchInput.addEventListener("input", () => {
+      renderLoyaltyPrograms();
+      renderPromotions();
+    });
+  }
+  if (filterSelect) {
+    filterSelect.addEventListener("change", () => {
+      renderLoyaltyPrograms();
+      renderPromotions();
+    });
+  }
+}
 
 // ----------------------------------------------------------------------------
 // Open Payments & Interledger Modal
@@ -1747,6 +1952,10 @@ document.addEventListener("DOMContentLoaded", () => {
   if (agentModalBackdrop) agentModalBackdrop.hidden = true;
   if (openPaymentsModal) openPaymentsModal.hidden = true;
   if (voiceSimModal) voiceSimModal.hidden = true;
+  if (loyaltyModalBackdrop) loyaltyModalBackdrop.hidden = true;
+  if (promoModalBackdrop) promoModalBackdrop.hidden = true;
+
+  setupOfferingsTabs();
 
   const broadcastSwitch = document.getElementById("unitiBroadcastSwitch");
   if (broadcastSwitch) {
