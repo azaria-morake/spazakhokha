@@ -12,7 +12,14 @@ export function UnitNodeCard({
   township = 'Soweto',
   openPaymentsId = '$spazauniti.org/unit-104',
   broadcastEnabled = true,
+  cardHeading = 'Unit Node Card',
+  statusLabel,
+  modalTitle = 'Unit Open Payments Node',
+  modalSubtitle = 'Scan at the counter or paste the ILP pointer for R0-fee UBU deposits & wholesaler settlement.',
+  footerCta = 'Counter QR',
   onNavigateTab,
+  ctaTab = 'pacts',
+  ctaLabel = 'Manage Pacts',
 }) {
   const [qrOpen, setQrOpen] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -28,13 +35,13 @@ export function UnitNodeCard({
       <div className="ubu-card-surface rounded-2xl p-5 flex flex-col justify-between h-full">
         <div className="flex items-center justify-between gap-2 mb-3">
           <h3 className="text-base font-semibold text-white tracking-tight">
-            Unit Node Card
+            {cardHeading}
           </h3>
           <button
             type="button"
             onClick={() => setQrOpen(true)}
             className="p-1.5 rounded-lg text-[#9AA7C4] hover:text-white hover:bg-white/[0.06] transition-colors cursor-pointer"
-            title="Inspect Node Pointer & Counter QR"
+            title="Inspect Node Pointer & QR"
           >
             <MoreVertical className="w-4 h-4" />
           </button>
@@ -75,7 +82,7 @@ export function UnitNodeCard({
                   broadcastEnabled ? 'bg-[#38E4AE]' : 'bg-[#9AA7C4]'
                 }`}
               />
-              {broadcastEnabled ? 'LIVE' : 'PAUSED'}
+              {statusLabel || (broadcastEnabled ? 'LIVE' : 'PAUSED')}
             </span>
           </div>
 
@@ -90,7 +97,7 @@ export function UnitNodeCard({
           {/* Bottom Row: Open Payments Node Pointer + Overlapping Cyber/Silver Mark */}
           <div className="relative z-10 flex items-end justify-between gap-2">
             <div className="min-w-0">
-              <div className="text-[10px] uppercase tracking-wider text-[#9AA7C4] font-medium">
+              <div className="text-[10px] uppercase tracking-wider text-[#9AA7C4] font-medium truncate">
                 {unitName}
               </div>
               <div className="text-xs font-semibold text-white font-mono-code truncate mt-0.5">
@@ -107,13 +114,13 @@ export function UnitNodeCard({
         </button>
 
         <div className="mt-3 flex items-center justify-between text-[11px] text-[#9AA7C4]">
-          <span>{township} · Node {unitId}</span>
+          <span>{township} · @{unitId}</span>
           <button
             type="button"
             onClick={() => setQrOpen(true)}
             className="text-[#38C3FF] hover:text-white font-semibold cursor-pointer"
           >
-            Counter QR
+            {footerCta}
           </button>
         </div>
       </div>
@@ -121,8 +128,8 @@ export function UnitNodeCard({
       {/* Counter QR & Open Payments Pointer Modal */}
       <Dialog open={qrOpen} onOpenChange={setQrOpen} maxWidth="max-w-md">
         <DialogHeader
-          title="Unit Open Payments Node"
-          subtitle="Scan at the counter or paste the ILP pointer for R0-fee UBU deposits & wholesaler settlement."
+          title={modalTitle}
+          subtitle={modalSubtitle}
           onClose={() => setQrOpen(false)}
         />
 
@@ -166,7 +173,7 @@ export function UnitNodeCard({
 
           <div className="w-full flex items-center justify-between gap-2 pt-2">
             <Badge variant={broadcastEnabled ? 'mint' : 'default'}>
-              {broadcastEnabled ? 'Live on SpazaUniti' : 'Broadcast Paused'}
+              {statusLabel || (broadcastEnabled ? 'Live on SpazaUniti' : 'Broadcast Paused')}
             </Badge>
             <div className="flex gap-2">
               {onNavigateTab && (
@@ -175,10 +182,10 @@ export function UnitNodeCard({
                   size="sm"
                   onClick={() => {
                     setQrOpen(false)
-                    onNavigateTab('pacts')
+                    onNavigateTab(ctaTab)
                   }}
                 >
-                  Manage Pacts
+                  {ctaLabel}
                 </Button>
               )}
               <Button size="sm" onClick={() => setQrOpen(false)}>

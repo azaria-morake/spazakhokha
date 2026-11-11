@@ -20,17 +20,23 @@ const TAB_TITLES = {
   settlements: 'Settlements & Wholesalers',
   team: 'Personnel & RBAC',
   network: 'SpazaUniti Network Hub',
-  settings: 'Node Settings',
+  pay: 'Pay Spaza Unit',
+  family_rbac: 'Family RBAC & Allowances',
+  beneficiaries: 'Beneficiaries & Invitations',
+  load: 'Load UBU & Rewards',
+  settings: 'Account & Node Settings',
 }
 
 export function TopBar({
   activeTab,
-  unitName,
+  sessionType,
+  actor,
+  contextLabel,
   unitId,
-  staff,
   broadcastEnabled,
   ledger = [],
   availableUnits = [],
+  pendingInvitesCount = 0,
   onSelectUnit,
   onSelectConsumerHandle,
   onSelectTab,
@@ -52,7 +58,7 @@ export function TopBar({
     let active = true
     const t = setTimeout(async () => {
       try {
-        const res = await searchConsumers(clean)
+        const res = await searchConsumers(clean, actor?.username || '')
         if (active && Array.isArray(res)) setSearchResults(res.slice(0, 5))
       } catch {
         if (active) setSearchResults([])
@@ -62,18 +68,27 @@ export function TopBar({
       active = false
       clearTimeout(t)
     }
-  }, [searchQuery])
+  }, [searchQuery, actor?.username])
 
-  const initials = (staff?.full_name || 'U')
+  const displayName = actor?.full_name || 'User'
+  const activeRole =
+    sessionType === 'STAFF' ? actor?.role : actor?.consumer_role
+  const initials = displayName
     .split(' ')
     .map((p) => p[0])
     .join('')
     .slice(0, 2)
     .toUpperCase()
 
+  const searchPlaceholder =
+    sessionType === 'STAFF'
+      ? 'Search @handle for Counter Till...'
+      : activeRole === 'ADULT_INDIVIDUAL'
+        ? 'Search @handle to invite...'
+        : 'Search @handle across SpazaUniti...'
+
   return (
     <header className="sticky top-0 z-30 bg-[#0F1735]/90 backdrop-blur-md border-b border-white/[0.06] px-5 md:px-8 py-4 flex flex-wrap items-center justify-between gap-4">
-      {/* Left: Mobile toggle + Page Title + Store Node Selector */}
       <div className="flex items-center gap-3 min-w-0">
         <button
           type="button"
@@ -89,7 +104,7 @@ export function TopBar({
             {TAB_TITLES[activeTab] || 'Overview'}
           </h1>
 
-          {staff?.role === 'NETWORK_ADMIN' && availableUnits.length > 0 ? (
+          {sessionType === 'STAFF' && actor?.role === 'NETWORK_ADMIN' && availableUnits.length > 0 ? (
             <select
               value={unitId}
               onChange={(e) => onSelectUnit?.(e.target.value)}
@@ -105,31 +120,29 @@ export function TopBar({
             <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#18244B] border border-white/10 text-xs font-medium text-[#D2D7DF]">
               <span
                 className={`w-1.5 h-1.5 rounded-full ${
-                  broadcastEnabled ? 'bg-[#38E4AE]' : 'bg-[#9AA7C4]'
+                  broadcastEnabled !== false ? 'bg-[#38E4AE]' : 'bg-[#9AA7C4]'
                 }`}
               />
-              {unitName || unitId}
+              {contextLabel}
             </span>
           )}
         </div>
       </div>
 
-      {/* Right: Search + Notification Bell + Network Sync + Profile Pill (exact match to ubu-one-ui.jpeg) */}
       <div className="flex items-center gap-2.5 md:gap-3.5 relative">
-        {/* Global @handle Search */}
         <div className="relative hidden md:block w-60 lg:w-72">
           <Search className="w-4 h-4 text-[#7F8CAE] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search @handle (e.g. lethabomorake)"
+            placeholder={searchPlaceholder}
             className="w-full h-9 pl-9 pr-3 rounded-xl bg-[#18244B] border border-white/[0.08] text-xs text-white placeholder:text-[#7F8CAE] focus:outline-none focus:border-[#00A2E8]/60"
           />
 
           {searchResults.length > 0 && (
             <div className="absolute left-0 right-0 mt-2 rounded-xl bg-[#111B3D] border border-white/15 shadow-2xl overflow-hidden z-50">
               <div className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-[#9AA7C4] bg-[#0B1128]">
-                Load @handle into Counter Till
+                {sessionType === 'STAFF' ? 'Load into Counter Till' : 'Select @Handle'}
               </div>
               {searchResults.map((c) => (
                 <button
@@ -155,7 +168,7 @@ export function TopBar({
           )}
         </div>
 
-        {/* Notifications Bell */}
+        {/* Notifications */}
         <div className="relative">
           <button
             type="button"
@@ -165,10 +178,10 @@ export function TopBar({
               setShowProfileMenu(false)
             }}
             className="relative w-9 h-9 rounded-xl bg-[#18244B]/80 hover:bg-[#1E2E5E] border border-white/[0.08] flex items-center justify-center text-[#D2D7DF] hover:text-white transition-colors cursor-pointer"
-            title="Recent Unit Activity"
+            title="Recent Activity & Invites"
           >
             <Bell className="w-4 h-4" />
-            {ledger.length > 0 && (
+            {(ledger.length > 0 || pendingInvitesCount > 0) && (
               <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-[#F46B78] ring-2 ring-[#0F1735]" />
             )}
           </button>
@@ -176,8 +189,19 @@ export function TopBar({
           {showNotifs && (
             <div className="absolute right-0 mt-2 w-80 rounded-2xl bg-[#111B3D] border border-white/15 shadow-2xl p-3 z-50">
               <div className="flex items-center justify-between px-1 pb-2 mb-2 border-b border-white/10">
-                <span className="text-xs font-bold text-white">Recent UbuOne Events</span>
-                <span className="text-[10px] text-[#38C3FF]">{ledger.length} entries</span>
+                <span className="text-xs font-bold text-white">Recent UbuOne Activity</span>
+                {pendingInvitesCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowNotifs(false)
+                      onSelectTab?.('beneficiaries')
+                    }}
+                    className="text-[10px] font-bold text-[#00A2E8] hover:underline cursor-pointer"
+                  >
+                    {pendingInvitesCount} Invite Pending
+                  </button>
+                )}
               </div>
               <div className="space-y-2 max-h-60 overflow-y-auto">
                 {ledger.slice(0, 5).map((item) => (
@@ -200,7 +224,7 @@ export function TopBar({
                 ))}
                 {ledger.length === 0 && (
                   <div className="text-xs text-[#9AA7C4] py-4 text-center">
-                    No counter events recorded yet.
+                    No activity recorded yet.
                   </div>
                 )}
               </div>
@@ -208,7 +232,7 @@ export function TopBar({
           )}
         </div>
 
-        {/* SpazaUniti Live Broadcast / Network Status Button */}
+        {/* Network Status */}
         <div className="relative">
           <button
             type="button"
@@ -218,28 +242,20 @@ export function TopBar({
               setShowProfileMenu(false)
             }}
             className="relative w-9 h-9 rounded-xl bg-[#18244B]/80 hover:bg-[#1E2E5E] border border-white/[0.08] flex items-center justify-center text-[#D2D7DF] hover:text-white transition-colors cursor-pointer"
-            title="SpazaUniti Live Sync"
+            title="Open Payments Network Status"
           >
             <MessageSquare className="w-4 h-4" />
-            <span
-              className={`absolute top-2 right-2 w-2 h-2 rounded-full ring-2 ring-[#0F1735] ${
-                broadcastEnabled ? 'bg-[#00A2E8]' : 'bg-[#9AA7C4]'
-              }`}
-            />
+            <span className="absolute top-2 right-2 w-2 h-2 rounded-full ring-2 ring-[#0F1735] bg-[#00A2E8]" />
           </button>
 
           {showSync && (
             <div className="absolute right-0 mt-2 w-72 rounded-2xl bg-[#111B3D] border border-white/15 shadow-2xl p-3.5 z-50 space-y-2.5 text-xs">
               <div className="flex items-center gap-2 font-bold text-white">
                 <Radio className="w-4 h-4 text-[#00A2E8]" />
-                SpazaUniti Customer Sync
+                SpazaUniti Ecosystem Connected
               </div>
               <p className="text-[#9AA7C4] leading-relaxed">
-                Store Broadcast is{' '}
-                <strong className="text-white">
-                  {broadcastEnabled ? 'LIVE' : 'PAUSED'}
-                </strong>
-                . Loyalty pacts and specials sync instantaneously to shoppers on Port 3001.
+                Signed in under <strong className="text-white">{roleDisplayLabel(activeRole)}</strong>. All UBU transactions settle at R0.00 counter fees across Port 8001.
               </p>
               <a
                 href={CUSTOMER_APP_URL}
@@ -254,7 +270,7 @@ export function TopBar({
           )}
         </div>
 
-        {/* Staff Profile Pill */}
+        {/* Profile Pill */}
         <div className="relative">
           <button
             type="button"
@@ -270,10 +286,10 @@ export function TopBar({
             </div>
             <div className="hidden sm:block text-left">
               <div className="text-xs font-semibold text-white leading-tight">
-                {staff?.full_name || 'Staff'}
+                {displayName}
               </div>
               <div className="text-[10px] text-[#9AA7C4] leading-tight">
-                {roleDisplayLabel(staff?.role)}
+                {roleDisplayLabel(activeRole)}
               </div>
             </div>
             <ChevronDown className="w-3.5 h-3.5 text-[#9AA7C4]" />
@@ -282,9 +298,9 @@ export function TopBar({
           {showProfileMenu && (
             <div className="absolute right-0 mt-2 w-56 rounded-2xl bg-[#111B3D] border border-white/15 shadow-2xl p-2 z-50 text-xs">
               <div className="px-2.5 py-2 border-b border-white/10 mb-1">
-                <div className="font-semibold text-white">{staff?.full_name}</div>
+                <div className="font-semibold text-white">{displayName}</div>
                 <div className="text-[10px] text-[#38C3FF] font-mono-code">
-                  @{staff?.username}
+                  @{actor?.username}
                 </div>
               </div>
               <button
@@ -296,7 +312,7 @@ export function TopBar({
                 className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-[#D2D7DF] hover:text-white hover:bg-white/[0.06] cursor-pointer"
               >
                 <User className="w-3.5 h-3.5" />
-                Node &amp; RBAC Settings
+                Account &amp; RBAC Settings
               </button>
               <button
                 type="button"
@@ -316,4 +332,3 @@ export function TopBar({
     </header>
   )
 }
-

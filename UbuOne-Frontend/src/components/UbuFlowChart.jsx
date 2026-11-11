@@ -69,14 +69,24 @@ export function MiniSparkline({ values = [14, 22, 18, 29, 24, 38, 34] }) {
  * Series A (Cyber Blue): Counter Inflow (UBU R1 micro-payments)
  * Series B (Digital Silver): Change-in-UBU & Settlements
  */
-export function UbuFlowChart({ ledger = [] }) {
+export function UbuFlowChart({
+  ledger = [],
+  title = 'UBU Flow History',
+  seriesALabel = 'Counter UBU Inflow',
+  seriesBLabel = 'Change & Settlements',
+}) {
   const [rangeMode, setRangeMode] = useState('today')
   const [hoverIdx, setHoverIdx] = useState(null)
 
   const seriesData = useMemo(() => {
-    const counterEvents = ledger.filter((e) => e.event_type === 'COUNTER_SALE')
+    const counterEvents = ledger.filter(
+      (e) => e.event_type === 'COUNTER_SALE' || e.event_type === 'UBU_DEPOSIT'
+    )
     const outEvents = ledger.filter(
-      (e) => e.event_type === 'CHANGE_IN_UBU' || e.event_type === 'SETTLEMENT'
+      (e) =>
+        e.event_type === 'CHANGE_IN_UBU' ||
+        e.event_type === 'SETTLEMENT' ||
+        e.event_type === 'BENEFICIARY_TRANSFER'
     )
 
     const liveCounterSum = counterEvents.reduce((s, e) => s + Number(e.amount_ubu || 0), 0)
@@ -145,16 +155,16 @@ export function UbuFlowChart({ ledger = [] }) {
       <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
         <div>
           <h3 className="text-base font-semibold text-white tracking-tight">
-            UBU Flow History
+            {title}
           </h3>
           <div className="flex items-center gap-4 mt-1 text-[11px] text-[#9AA7C4]">
             <span className="inline-flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-[#00A2E8] shadow-[0_0_8px_#00A2E8]" />
-              Counter UBU Inflow
+              {seriesALabel}
             </span>
             <span className="inline-flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-[#D2D7DF]" />
-              Change &amp; Settlements
+              {seriesBLabel}
             </span>
           </div>
         </div>
@@ -300,11 +310,11 @@ export function UbuFlowChart({ ledger = [] }) {
           <div className="absolute top-1 right-2 px-3 py-2 rounded-xl bg-[#0B1128]/95 border border-[#00A2E8]/35 shadow-xl text-[11px] pointer-events-none">
             <div className="font-semibold text-white mb-1">{hovered.label} Snapshot</div>
             <div className="flex items-center justify-between gap-4 text-[#38C3FF] tabular-nums">
-              <span>Counter Inflow</span>
+              <span>{seriesALabel}</span>
               <span className="font-bold">{formatUBU(hovered.inflow)}</span>
             </div>
             <div className="flex items-center justify-between gap-4 text-[#D2D7DF] tabular-nums mt-0.5">
-              <span>Change &amp; Settled</span>
+              <span>{seriesBLabel}</span>
               <span className="font-bold">{formatUBU(hovered.outflow)}</span>
             </div>
           </div>

@@ -46,6 +46,9 @@ export function roleDisplayLabel(role) {
   if (role === 'UNIT_OWNER') return 'Unit Owner'
   if (role === 'UNIT_CASHIER') return 'Unit Cashier'
   if (role === 'NETWORK_ADMIN') return 'Network Admin'
-  return role || 'Staff'
+  if (role === 'FAMILY_ADMIN') return 'Family Admin'
+  if (role === 'FAMILY_MEMBER') return 'Family Member'
+  if (role === 'ADULT_INDIVIDUAL') return 'Adult Account'
+  return role || 'Operator'
 }
 

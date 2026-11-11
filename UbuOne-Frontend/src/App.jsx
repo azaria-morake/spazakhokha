@@ -10,16 +10,33 @@ import { SettlementsView } from './views/SettlementsView'
 import { TeamRbacView } from './views/TeamRbacView'
 import { NetworkHubView } from './views/NetworkHubView'
 import { SettingsView } from './views/SettingsView'
+import { ConsumerOverviewView } from './views/ConsumerOverviewView'
+import { FamilyRbacView } from './views/FamilyRbacView'
+import { AdultBeneficiariesView } from './views/AdultBeneficiariesView'
+import {
+  ConsumerLoadPoolView,
+  ConsumerPayUnitView,
+} from './views/ConsumerPayAndLoadView'
 import {
   fetchAdminOverview,
+  fetchConsumerMe,
+  fetchConsumerWorkspace,
+  fetchFamilyOverview,
   fetchMe,
   fetchUnitOverview,
+  getStoredSessionType,
   getStoredToken,
+  logoutConsumer,
   logoutUbuOne,
 } from './lib/api'
 
 export default function App() {
+  const [sessionType, setSessionType] = useState(null) // 'STAFF' | 'CONSUMER'
   const [staff, setStaff] = useState(null)
+  const [consumerActor, setConsumerActor] = useState(null)
+  const [consumerWorkspace, setConsumerWorkspace] = useState(null)
+  const [familyOverview, setFamilyOverview] = useState(null)
+
   const [booting, setBooting] = useState(true)
   const [unitId, setUnitId] = useState('unit-104')
   const [activeTab, setActiveTab] = useState('overview')
@@ -35,20 +52,31 @@ export default function App() {
     setTimeout(() => setToast(null), 3800)
   }, [])
 
-  // Restore RBAC token session on initial load
+  // Restore RBAC token session (Staff or Consumer/Family) on boot
   useEffect(() => {
     async function restoreSession() {
       if (!getStoredToken()) {
         setBooting(false)
         return
       }
+      const sType = getStoredSessionType()
       try {
-        const me = await fetchMe()
-        setStaff(me)
-        setUnitId(me.unit_id || 'unit-104')
+        if (sType === 'CONSUMER') {
+          const data = await fetchConsumerMe()
+          setSessionType('CONSUMER')
+          setConsumerActor(data.actor)
+        } else {
+          const me = await fetchMe()
+          setSessionType('STAFF')
+          setStaff(me)
+          setUnitId(me.unit_id || 'unit-104')
+        }
       } catch {
         await logoutUbuOne()
+        await logoutConsumer()
+        setSessionType(null)
         setStaff(null)
+        setConsumerActor(null)
       } finally {
         setBooting(false)
       }
@@ -56,7 +84,7 @@ export default function App() {
     restoreSession()
   }, [])
 
-  const syncWorkspace = useCallback(
+  const syncStaffWorkspace = useCallback(
     async (targetUnitId = unitId, activeStaff = staff) => {
       if (!activeStaff) return
       const effectiveUnit =
@@ -75,6 +103,7 @@ export default function App() {
         if (err.status === 401) {
           await logoutUbuOne()
           setStaff(null)
+          setSessionType(null)
         } else {
           showToast(err.message || 'Could not load unit metrics', 'error')
         }
@@ -83,24 +112,77 @@ export default function App() {
     [unitId, staff, showToast]
   )
 
-  useEffect(() => {
-    if (staff) {
-      syncWorkspace(unitId, staff)
-    }
-  }, [staff, unitId, syncWorkspace])
+  const syncConsumerWorkspace = useCallback(
+    async (activeActor = consumerActor) => {
+      if (!activeActor) return
+      try {
+        // Re-fetch live role + workspace + family overview (if linked)
+        const [meData, ws] = await Promise.all([
+          fetchConsumerMe(),
+          fetchConsumerWorkspace(activeActor.username),
+        ])
+        setConsumerActor(meData.actor)
+        setConsumerWorkspace(ws)
 
-  const handleLoginSuccess = (loggedStaff) => {
+        if (meData.actor.family_vault_username) {
+          const famOv = await fetchFamilyOverview(meData.actor.family_vault_username)
+          setFamilyOverview(famOv)
+        } else {
+          setFamilyOverview(null)
+        }
+      } catch (err) {
+        if (err.status === 401 || err.status === 403) {
+          await logoutConsumer()
+          setConsumerActor(null)
+          setSessionType(null)
+          showToast(err.message || 'Session ended', 'error')
+        } else {
+          showToast(err.message || 'Could not sync consumer workspace', 'error')
+        }
+      }
+    },
+    [consumerActor, showToast]
+  )
+
+  useEffect(() => {
+    if (sessionType === 'STAFF' && staff) {
+      syncStaffWorkspace(unitId, staff)
+    } else if (sessionType === 'CONSUMER' && consumerActor) {
+      syncConsumerWorkspace(consumerActor)
+    }
+  }, [sessionType, staff?.username, unitId, consumerActor?.username])
+
+  const handleStaffLogin = (loggedStaff) => {
+    setSessionType('STAFF')
     setStaff(loggedStaff)
+    setConsumerActor(null)
     setUnitId(loggedStaff.unit_id || 'unit-104')
     setActiveTab('overview')
     showToast(`Signed in as ${loggedStaff.full_name}`, 'success')
   }
 
-  const handleLogout = async () => {
-    await logoutUbuOne()
+  const handleConsumerLogin = (actor, profile) => {
+    setSessionType('CONSUMER')
+    setConsumerActor(actor)
     setStaff(null)
+    setConsumerWorkspace({ profile, ledger: [], transactions: [], units: [] })
+    setActiveTab('overview')
+    showToast(`Signed in as @${actor.username}`, 'success')
+  }
+
+  const handleLogout = async () => {
+    if (sessionType === 'CONSUMER') {
+      await logoutConsumer()
+    } else {
+      await logoutUbuOne()
+    }
+    setSessionType(null)
+    setStaff(null)
+    setConsumerActor(null)
     setOverview(null)
     setAdminOverview(null)
+    setConsumerWorkspace(null)
+    setFamilyOverview(null)
   }
 
   if (booting) {
@@ -112,16 +194,46 @@ export default function App() {
     )
   }
 
-  if (!staff) {
-    return <LoginScreen onLoginSuccess={handleLoginSuccess} />
+  if (!sessionType || (!staff && !consumerActor)) {
+    return (
+      <LoginScreen
+        onStaffLogin={handleStaffLogin}
+        onConsumerLogin={handleConsumerLogin}
+      />
+    )
   }
 
+  const activeActor = sessionType === 'STAFF' ? staff : consumerActor
   const isOwnerOrAdmin =
-    staff.role === 'UNIT_OWNER' || staff.role === 'NETWORK_ADMIN'
+    sessionType === 'STAFF' &&
+    (staff?.role === 'UNIT_OWNER' || staff?.role === 'NETWORK_ADMIN')
+
+  const pendingInvitesCount =
+    sessionType === 'CONSUMER'
+      ? Number(consumerWorkspace?.profile?.pending_invitations_count || 0)
+      : 0
+
+  const topLedger =
+    sessionType === 'STAFF'
+      ? overview?.ledger || []
+      : consumerActor?.consumer_role === 'FAMILY_ADMIN'
+        ? familyOverview?.ledger || []
+        : consumerWorkspace?.ledger || []
+
+  const contextTitle =
+    sessionType === 'STAFF'
+      ? overview?.unit_name || staff?.unit_name || 'Spaza Unit'
+      : consumerActor?.family_vault_username
+        ? `@${consumerActor.family_vault_username} Vault`
+        : consumerActor?.full_name || `@${consumerActor?.username}`
+
+  const contextSub =
+    sessionType === 'STAFF'
+      ? `Node: ${overview?.unit_id || unitId}`
+      : `Handle: @${consumerActor?.username}`
 
   return (
     <div className="min-h-screen bg-[#0F1735] text-white flex">
-      {/* Persistent Toast Feedback */}
       {toast && (
         <div
           className={`fixed bottom-5 right-5 z-50 px-4 py-3 rounded-xl border shadow-2xl flex items-center gap-2.5 text-xs font-semibold ${
@@ -141,32 +253,39 @@ export default function App() {
         </div>
       )}
 
-      {/* Left Sidebar Navigation */}
       <Sidebar
         activeTab={activeTab}
         onSelectTab={setActiveTab}
-        staff={staff}
-        unitName={overview?.unit_name || staff.unit_name}
-        unitId={overview?.unit_id || unitId}
+        sessionType={sessionType}
+        actor={activeActor}
+        contextTitle={contextTitle}
+        contextSub={contextSub}
+        pendingInvitesCount={pendingInvitesCount}
         onLogout={handleLogout}
         mobileOpen={mobileMenuOpen}
         onCloseMobile={() => setMobileMenuOpen(false)}
       />
 
-      {/* Right Main Workspace */}
       <div className="flex-1 min-w-0 flex flex-col">
         <TopBar
           activeTab={activeTab}
-          unitName={overview?.unit_name || staff.unit_name}
+          sessionType={sessionType}
+          actor={activeActor}
+          contextLabel={contextTitle}
           unitId={overview?.unit_id || unitId}
-          staff={staff}
-          broadcastEnabled={overview?.broadcast_enabled ?? true}
-          ledger={overview?.ledger || []}
+          broadcastEnabled={sessionType === 'STAFF' ? overview?.broadcast_enabled ?? true : true}
+          ledger={topLedger}
           availableUnits={adminOverview?.units || []}
+          pendingInvitesCount={pendingInvitesCount}
           onSelectUnit={(nextUnitId) => setUnitId(nextUnitId)}
           onSelectConsumerHandle={(handle) => {
             setPrefillHandle(handle)
-            showToast(`Loaded @${handle} into Counter Till`, 'info')
+            if (sessionType === 'STAFF') {
+              showToast(`Loaded @${handle} into Counter Till`, 'info')
+            } else {
+              setActiveTab('beneficiaries')
+              showToast(`Selected @${handle} under Beneficiaries`, 'info')
+            }
           }}
           onSelectTab={setActiveTab}
           onLogout={handleLogout}
@@ -174,57 +293,58 @@ export default function App() {
         />
 
         <main className="flex-1 p-5 md:p-7 max-w-[1440px] w-full mx-auto">
-          {activeTab === 'overview' && (
+          {/* STAFF PORTAL VIEWS */}
+          {sessionType === 'STAFF' && activeTab === 'overview' && (
             <OverviewView
               overview={overview}
               unitId={overview?.unit_id || unitId}
               prefillHandle={prefillHandle}
-              onRefresh={() => syncWorkspace(unitId, staff)}
+              onRefresh={() => syncStaffWorkspace(unitId, staff)}
               showToast={showToast}
               onNavigateTab={setActiveTab}
             />
           )}
 
-          {activeTab === 'till' && (
+          {sessionType === 'STAFF' && activeTab === 'till' && (
             <CounterTillView
               unitId={overview?.unit_id || unitId}
               overview={overview}
               prefillHandle={prefillHandle}
-              onRefresh={() => syncWorkspace(unitId, staff)}
+              onRefresh={() => syncStaffWorkspace(unitId, staff)}
               showToast={showToast}
             />
           )}
 
-          {activeTab === 'pacts' && (
+          {sessionType === 'STAFF' && activeTab === 'pacts' && (
             <PactsPromosView
               unitId={overview?.unit_id || unitId}
               overview={overview}
               staff={staff}
-              onRefresh={() => syncWorkspace(unitId, staff)}
+              onRefresh={() => syncStaffWorkspace(unitId, staff)}
               showToast={showToast}
             />
           )}
 
-          {activeTab === 'settlements' && isOwnerOrAdmin && (
+          {sessionType === 'STAFF' && activeTab === 'settlements' && isOwnerOrAdmin && (
             <SettlementsView
               unitId={overview?.unit_id || unitId}
               overview={overview}
-              onRefresh={() => syncWorkspace(unitId, staff)}
+              onRefresh={() => syncStaffWorkspace(unitId, staff)}
               showToast={showToast}
             />
           )}
 
-          {activeTab === 'team' && isOwnerOrAdmin && (
+          {sessionType === 'STAFF' && activeTab === 'team' && isOwnerOrAdmin && (
             <TeamRbacView
               unitId={overview?.unit_id || unitId}
               overview={overview}
               currentStaff={staff}
-              onRefresh={() => syncWorkspace(unitId, staff)}
+              onRefresh={() => syncStaffWorkspace(unitId, staff)}
               showToast={showToast}
             />
           )}
 
-          {activeTab === 'network' && staff.role === 'NETWORK_ADMIN' && (
+          {sessionType === 'STAFF' && activeTab === 'network' && staff?.role === 'NETWORK_ADMIN' && (
             <NetworkHubView
               adminOverview={adminOverview}
               currentUnitId={unitId}
@@ -235,10 +355,63 @@ export default function App() {
             />
           )}
 
+          {/* CONSUMER / FAMILY RBAC / ADULT VIEWS */}
+          {sessionType === 'CONSUMER' && activeTab === 'overview' && (
+            <ConsumerOverviewView
+              actor={consumerActor}
+              workspace={consumerWorkspace}
+              familyOverview={familyOverview}
+              onRefresh={() => syncConsumerWorkspace(consumerActor)}
+              showToast={showToast}
+              onNavigateTab={setActiveTab}
+            />
+          )}
+
+          {sessionType === 'CONSUMER' && activeTab === 'pay' && (
+            <ConsumerPayUnitView
+              actor={consumerActor}
+              workspace={consumerWorkspace}
+              onRefresh={() => syncConsumerWorkspace(consumerActor)}
+              showToast={showToast}
+            />
+          )}
+
+          {sessionType === 'CONSUMER' && activeTab === 'family_rbac' && (
+            <FamilyRbacView
+              actor={consumerActor}
+              familyOverview={familyOverview}
+              workspace={consumerWorkspace}
+              onRefresh={() => syncConsumerWorkspace(consumerActor)}
+              showToast={showToast}
+            />
+          )}
+
+          {sessionType === 'CONSUMER' && activeTab === 'beneficiaries' && (
+            <AdultBeneficiariesView
+              actor={consumerActor}
+              workspace={consumerWorkspace}
+              prefillHandle={prefillHandle}
+              onRefresh={() => syncConsumerWorkspace(consumerActor)}
+              showToast={showToast}
+            />
+          )}
+
+          {sessionType === 'CONSUMER' && activeTab === 'load' && (
+            <ConsumerLoadPoolView
+              actor={consumerActor}
+              familyOverview={familyOverview}
+              workspace={consumerWorkspace}
+              onRefresh={() => syncConsumerWorkspace(consumerActor)}
+              showToast={showToast}
+            />
+          )}
+
           {activeTab === 'settings' && (
             <SettingsView
-              staff={staff}
+              sessionType={sessionType}
+              actor={activeActor}
               overview={overview}
+              workspace={consumerWorkspace}
               unitId={unitId}
               onLogout={handleLogout}
             />
@@ -248,4 +421,3 @@ export default function App() {
     </div>
   )
 }
-

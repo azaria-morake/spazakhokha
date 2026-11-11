@@ -1,5 +1,6 @@
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8001'
 const TOKEN_KEY = 'ubuone_rbac_token'
+const SESSION_TYPE_KEY = 'ubuone_session_type' // 'STAFF' | 'CONSUMER'
 
 export const CUSTOMER_APP_URL = import.meta.env.VITE_CUSTOMER_APP_URL || 'http://localhost:3001'
 
@@ -11,13 +12,30 @@ export function getStoredToken() {
   }
 }
 
-export function setStoredToken(token) {
+export function getStoredSessionType() {
   try {
-    if (token) localStorage.setItem(TOKEN_KEY, token)
-    else localStorage.removeItem(TOKEN_KEY)
+    return localStorage.getItem(SESSION_TYPE_KEY) || 'STAFF'
+  } catch {
+    return 'STAFF'
+  }
+}
+
+export function setStoredSession(token, type = 'STAFF') {
+  try {
+    if (token) {
+      localStorage.setItem(TOKEN_KEY, token)
+      localStorage.setItem(SESSION_TYPE_KEY, type)
+    } else {
+      localStorage.removeItem(TOKEN_KEY)
+      localStorage.removeItem(SESSION_TYPE_KEY)
+    }
   } catch {
     // ignore storage errors
   }
+}
+
+export function setStoredToken(token) {
+  setStoredSession(token, token ? getStoredSessionType() : '')
 }
 
 async function apiFetch(path, options = {}) {
@@ -59,14 +77,14 @@ async function apiFetch(path, options = {}) {
   return data
 }
 
-// --- RBAC Auth ---
+// --- RBAC Auth (Unit Staff) ---
 export async function loginUbuOne(username, passcode) {
   const data = await apiFetch('/api/ubuone/auth/login', {
     method: 'POST',
     body: JSON.stringify({ username: username.trim(), passcode: passcode.trim() }),
   })
   if (data.token) {
-    setStoredToken(data.token)
+    setStoredSession(data.token, 'STAFF')
   }
   return data
 }
@@ -83,8 +101,127 @@ export async function logoutUbuOne() {
   } catch {
     // clear local session regardless
   } finally {
-    setStoredToken('')
+    setStoredSession('', '')
   }
+}
+
+// --- Consumer & Family RBAC Auth ---
+export async function loginConsumer(username, pin) {
+  const data = await apiFetch('/api/ubuone/auth/consumer/login', {
+    method: 'POST',
+    body: JSON.stringify({ username: username.trim(), pin: pin.trim() }),
+  })
+  if (data.token) {
+    setStoredSession(data.token, 'CONSUMER')
+  }
+  return data
+}
+
+export function fetchConsumerMe() {
+  return apiFetch('/api/ubuone/auth/consumer/me')
+}
+
+export async function logoutConsumer() {
+  try {
+    if (getStoredToken()) {
+      await apiFetch('/api/ubuone/auth/consumer/logout', { method: 'POST' })
+    }
+  } catch {
+    // clear local session regardless
+  } finally {
+    setStoredSession('', '')
+  }
+}
+
+export function registerConsumerAccount(payload) {
+  return apiFetch('/api/customers/register', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function fetchFamilyOverview(familyUsername) {
+  return apiFetch(`/api/ubuone/families/${encodeURIComponent(familyUsername)}/overview`)
+}
+
+export function addFamilyMemberRBAC(familyUsername, payload) {
+  return apiFetch(`/api/ubuone/families/${encodeURIComponent(familyUsername)}/members`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function updateFamilyMemberRBAC(familyUsername, memberUsername, payload) {
+  return apiFetch(
+    `/api/ubuone/families/${encodeURIComponent(familyUsername)}/members/${encodeURIComponent(memberUsername)}`,
+    {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    }
+  )
+}
+
+export function fundFamilyPoolRBAC(familyUsername, payload) {
+  return apiFetch(`/api/ubuone/families/${encodeURIComponent(familyUsername)}/fund`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function fetchConsumerWorkspace(username) {
+  return apiFetch(`/api/ubuone/consumers/${encodeURIComponent(username)}/workspace`)
+}
+
+export function payUnitFromConsumer(username, payload) {
+  return apiFetch(`/api/ubuone/consumers/${encodeURIComponent(username)}/pay-unit`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function fundConsumerUbuRBAC(username, payload) {
+  return apiFetch(`/api/ubuone/consumers/${encodeURIComponent(username)}/fund-ubu`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function inviteBeneficiaryRBAC(sponsorUsername, payload) {
+  return apiFetch(`/api/ubuone/adults/${encodeURIComponent(sponsorUsername)}/beneficiaries/invite`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function respondInvitationRBAC(linkId, action) {
+  return apiFetch(`/api/ubuone/adults/invitations/${encodeURIComponent(linkId)}/respond`, {
+    method: 'POST',
+    body: JSON.stringify({ action }),
+  })
+}
+
+export function allocateBeneficiaryRBAC(sponsorUsername, linkId, payload) {
+  return apiFetch(
+    `/api/ubuone/adults/${encodeURIComponent(sponsorUsername)}/beneficiaries/${encodeURIComponent(linkId)}/allocate`,
+    {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }
+  )
+}
+
+export function removeBeneficiaryRBAC(username, linkId) {
+  return apiFetch(
+    `/api/ubuone/adults/${encodeURIComponent(username)}/beneficiaries/${encodeURIComponent(linkId)}`,
+    { method: 'DELETE' }
+  )
+}
+
+export function cashoutConsumerTokens(username, unitId = 'unit-104', amount = 20.0, purpose = 'Taxi / Transport Cashout') {
+  return apiFetch(`/api/wallets/${encodeURIComponent(username)}/cashout`, {
+    method: 'POST',
+    body: JSON.stringify({ unit_id: unitId, amount, purpose }),
+  })
 }
 
 // --- Unit Overview & Counter Operations ---
