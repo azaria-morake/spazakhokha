@@ -35,6 +35,8 @@ from .models import (
     SpendTokensRequest,
     SpendTokensResponse,
     UbuOneLoginRequest,
+    ConsumerLoginRequest,
+    ConsumerPayUnitRequest,
     StaffResponse,
     StaffCreateRequest,
     CounterChargeRequest,
@@ -72,6 +74,15 @@ from .rbac import (
     list_unit_staff,
     create_unit_staff,
     toggle_unit_staff
+)
+from .consumer_rbac import (
+    login_consumer,
+    logout_consumer,
+    get_current_consumer,
+    assert_family_admin,
+    get_family_overview,
+    get_consumer_workspace,
+    pay_unit_from_consumer
 )
 from .ubuone import (
     get_unit_overview,
@@ -467,6 +478,133 @@ def ubuone_network_overview(
     staff: Dict[str, Any] = Depends(require_roles(["NETWORK_ADMIN"]))
 ):
     return get_network_admin_summary()
+
+# -----------------------------------------------------------------------------
+# 4b. UbuOne Consumer, Family RBAC & Adult Individual Account Routes
+# -----------------------------------------------------------------------------
+@app.post("/api/ubuone/auth/consumer/login")
+def ubuone_consumer_login(payload: ConsumerLoginRequest):
+    return login_consumer(payload)
+
+@app.get("/api/ubuone/auth/consumer/me")
+def ubuone_consumer_me(actor: Dict[str, Any] = Depends(get_current_consumer)):
+    return {
+        "actor": actor,
+        "profile": get_consumer_profile_full(actor["username"])
+    }
+
+@app.post("/api/ubuone/auth/consumer/logout")
+def ubuone_consumer_logout(token: str = Depends(extract_token)):
+    return logout_consumer(token)
+
+@app.get("/api/ubuone/families/{family_username}/overview")
+def ubuone_family_overview(
+    family_username: str,
+    actor: Dict[str, Any] = Depends(get_current_consumer)
+):
+    return get_family_overview(family_username, actor)
+
+@app.post("/api/ubuone/families/{family_username}/members", response_model=CustomerResponse)
+def ubuone_family_add_member(
+    family_username: str,
+    payload: FamilyMemberCreateRequest,
+    actor: Dict[str, Any] = Depends(get_current_consumer)
+):
+    fam = assert_family_admin(actor, family_username)
+    return add_family_member(fam, payload)
+
+@app.put("/api/ubuone/families/{family_username}/members/{member_username}", response_model=CustomerResponse)
+def ubuone_family_update_member(
+    family_username: str,
+    member_username: str,
+    payload: FamilyMemberUpdateRequest,
+    actor: Dict[str, Any] = Depends(get_current_consumer)
+):
+    fam = assert_family_admin(actor, family_username)
+    return update_family_member(fam, member_username, payload)
+
+@app.post("/api/ubuone/families/{family_username}/fund", response_model=FundUbuResponse)
+def ubuone_family_fund_pool(
+    family_username: str,
+    payload: FundUbuRequest,
+    actor: Dict[str, Any] = Depends(get_current_consumer)
+):
+    fam = assert_family_admin(actor, family_username)
+    return fund_ubu_wallet(fam, payload)
+
+@app.get("/api/ubuone/consumers/{username}/workspace")
+def ubuone_consumer_workspace(
+    username: str,
+    actor: Dict[str, Any] = Depends(get_current_consumer)
+):
+    return get_consumer_workspace(username, actor)
+
+@app.post("/api/ubuone/consumers/{username}/pay-unit")
+def ubuone_consumer_pay_unit(
+    username: str,
+    payload: ConsumerPayUnitRequest,
+    actor: Dict[str, Any] = Depends(get_current_consumer)
+):
+    return pay_unit_from_consumer(username, actor, payload)
+
+@app.post("/api/ubuone/consumers/{username}/fund-ubu", response_model=FundUbuResponse)
+def ubuone_consumer_fund_ubu(
+    username: str,
+    payload: FundUbuRequest,
+    actor: Dict[str, Any] = Depends(get_current_consumer)
+):
+    clean = username.strip().lower().lstrip("@")
+    if actor["username"] != clean:
+        raise HTTPException(status_code=403, detail="RBAC Denied: Can only fund your own UBU wallet")
+    if actor["consumer_role"] == "FAMILY_MEMBER":
+        raise HTTPException(status_code=403, detail="RBAC Denied: Restricted Family Members cannot directly mint or fund pools without Family Admin privileges")
+    return fund_ubu_wallet(clean, payload)
+
+@app.post("/api/ubuone/adults/{sponsor_username}/beneficiaries/invite", response_model=CustomerResponse)
+def ubuone_adult_invite_beneficiary(
+    sponsor_username: str,
+    payload: BeneficiaryInviteRequest,
+    actor: Dict[str, Any] = Depends(get_current_consumer)
+):
+    clean = sponsor_username.strip().lower().lstrip("@")
+    if actor["username"] != clean:
+        raise HTTPException(status_code=403, detail="RBAC Denied: Cannot send beneficiary invitations from another handle")
+    if actor["consumer_role"] == "FAMILY_MEMBER":
+        raise HTTPException(status_code=403, detail="RBAC Denied: Restricted Family Members cannot create beneficiary sponsorships")
+    return invite_beneficiary(clean, payload)
+
+@app.post("/api/ubuone/adults/invitations/{link_id}/respond", response_model=CustomerResponse)
+def ubuone_adult_respond_invitation(
+    link_id: str,
+    payload: InvitationRespondRequest,
+    actor: Dict[str, Any] = Depends(get_current_consumer)
+):
+    return respond_to_invitation(link_id, actor["username"], payload.action)
+
+@app.post("/api/ubuone/adults/{sponsor_username}/beneficiaries/{link_id}/allocate")
+def ubuone_adult_allocate_beneficiary(
+    sponsor_username: str,
+    link_id: str,
+    payload: BeneficiaryAllocateRequest,
+    actor: Dict[str, Any] = Depends(get_current_consumer)
+):
+    clean = sponsor_username.strip().lower().lstrip("@")
+    if actor["username"] != clean:
+        raise HTTPException(status_code=403, detail="RBAC Denied: Cannot allocate funds from another handle")
+    if actor["consumer_role"] == "FAMILY_MEMBER":
+        raise HTTPException(status_code=403, detail="RBAC Denied: Restricted Family Members cannot allocate beneficiary allowances")
+    return allocate_to_beneficiary(clean, link_id, payload)
+
+@app.delete("/api/ubuone/adults/{username}/beneficiaries/{link_id}")
+def ubuone_adult_remove_beneficiary(
+    username: str,
+    link_id: str,
+    actor: Dict[str, Any] = Depends(get_current_consumer)
+):
+    clean = username.strip().lower().lstrip("@")
+    if actor["username"] != clean:
+        raise HTTPException(status_code=403, detail="RBAC Denied: Cannot revoke links belonging to another handle")
+    return remove_beneficiary_link(clean, link_id)
 
 # -----------------------------------------------------------------------------
 # 5. Open Payments Discovery & Two-Tier Grant Authorization

@@ -53,6 +53,7 @@ def _row_to_allocation_summary(cursor, row) -> Dict[str, Any]:
         "sponsor_full_name": row["sponsor_full_name"] if "sponsor_full_name" in keys else None,
         "link_type": row["link_type"],
         "relationship_label": row["relationship_label"],
+        "family_role": row["family_role"] if "family_role" in keys and row["family_role"] else "FAMILY_MEMBER",
         "status": row["status"],
         "allocation_limit_ubu": limit,
         "period": row["period"],
@@ -252,17 +253,26 @@ def add_family_member(family_username: str, payload: FamilyMemberCreateRequest) 
         conn.close()
         raise HTTPException(status_code=400, detail=f"@{member} is already linked under @{fam}")
 
+    f_role = (payload.family_role or "FAMILY_MEMBER").strip().upper()
+    if f_role not in ("FAMILY_ADMIN", "FAMILY_MEMBER"):
+        conn.close()
+        raise HTTPException(status_code=400, detail="family_role must be FAMILY_ADMIN or FAMILY_MEMBER")
+
+    period = (payload.period or "DAILY").strip().upper()
+    if period not in ("DAILY", "WEEKLY", "MONTHLY"):
+        period = "DAILY"
+
     link_id = f"lnk_{uuid.uuid4().hex[:10]}"
     cursor.execute("""
     INSERT INTO consumer_links (
         id, sponsor_username, member_username, link_type, relationship_label,
-        status, allocation_limit_ubu, period, spent_in_period_ubu, last_reset_date,
+        family_role, status, allocation_limit_ubu, period, spent_in_period_ubu, last_reset_date,
         allowed_categories, created_at
     )
-    VALUES (?, ?, ?, 'FAMILY_MEMBER', ?, 'ACCEPTED', ?, ?, 0.0, ?, ?, ?);
+    VALUES (?, ?, ?, 'FAMILY_MEMBER', ?, ?, 'ACCEPTED', ?, ?, 0.0, ?, ?, ?);
     """, (
-        link_id, fam, member, payload.relationship_label.strip(),
-        payload.daily_limit_ubu, payload.period.upper(), today_str,
+        link_id, fam, member, payload.relationship_label.strip(), f_role,
+        payload.daily_limit_ubu, period, today_str,
         payload.allowed_categories.strip(), now_str
     ))
 
@@ -285,15 +295,17 @@ def update_family_member(family_username: str, member_username: str, payload: Fa
         raise HTTPException(status_code=404, detail=f"Family member @{member} not found under @{fam}")
 
     new_limit = payload.allocation_limit_ubu if payload.allocation_limit_ubu is not None else row["allocation_limit_ubu"]
+    new_period = payload.period.upper() if payload.period and payload.period.upper() in ("DAILY", "WEEKLY", "MONTHLY") else row["period"]
     new_status = payload.status.upper() if payload.status and payload.status.upper() in ("ACCEPTED", "FROZEN") else row["status"]
+    new_role = payload.family_role.upper() if payload.family_role and payload.family_role.upper() in ("FAMILY_ADMIN", "FAMILY_MEMBER") else (row["family_role"] if "family_role" in row.keys() and row["family_role"] else "FAMILY_MEMBER")
     new_cats = payload.allowed_categories if payload.allowed_categories is not None else row["allowed_categories"]
     new_rel = payload.relationship_label if payload.relationship_label is not None else row["relationship_label"]
 
     cursor.execute("""
     UPDATE consumer_links
-    SET allocation_limit_ubu = ?, status = ?, allowed_categories = ?, relationship_label = ?
+    SET allocation_limit_ubu = ?, period = ?, status = ?, family_role = ?, allowed_categories = ?, relationship_label = ?
     WHERE id = ?;
-    """, (new_limit, new_status, new_cats, new_rel, row["id"]))
+    """, (new_limit, new_period, new_status, new_role, new_cats, new_rel, row["id"]))
     conn.commit()
     conn.close()
     return get_consumer_profile_full(fam)

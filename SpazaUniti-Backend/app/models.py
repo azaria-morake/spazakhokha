@@ -42,6 +42,7 @@ class ConsumerAllocationSummary(BaseModel):
     sponsor_full_name: Optional[str] = None
     link_type: str
     relationship_label: str
+    family_role: str = "FAMILY_MEMBER"
     status: str
     allocation_limit_ubu: float
     period: str
@@ -99,6 +100,7 @@ class FamilyMemberCreateRequest(BaseModel):
     cell_number: Optional[str] = Field("0720000000", description="Optional contact number")
     pin: Optional[str] = Field("1234", min_length=4, max_length=4, description="4-digit Counter PIN if creating handle")
     relationship_label: str = Field("Child", description="e.g. Spouse, Child, Elder, Sibling")
+    family_role: str = Field("FAMILY_MEMBER", description="FAMILY_ADMIN or FAMILY_MEMBER")
     daily_limit_ubu: float = Field(10.0, ge=0, description="Daily UBU allowance drawn from family vault")
     period: str = Field("DAILY", description="DAILY, WEEKLY, or MONTHLY")
     allowed_categories: str = Field("All Spaza Goods", description="Category guardrail")
@@ -112,7 +114,9 @@ class FamilyMemberCreateRequest(BaseModel):
 
 class FamilyMemberUpdateRequest(BaseModel):
     allocation_limit_ubu: Optional[float] = Field(None, ge=0)
+    period: Optional[str] = Field(None, description="DAILY, WEEKLY, or MONTHLY")
     status: Optional[str] = Field(None, description="ACCEPTED or FROZEN")
+    family_role: Optional[str] = Field(None, description="FAMILY_ADMIN or FAMILY_MEMBER")
     allowed_categories: Optional[str] = None
     relationship_label: Optional[str] = None
 
@@ -264,6 +268,17 @@ class TransactionResponse(BaseModel):
 class UbuOneLoginRequest(BaseModel):
     username: str = Field(..., min_length=3, max_length=40)
     passcode: str = Field(..., min_length=4, max_length=32)
+
+class ConsumerLoginRequest(BaseModel):
+    username: str = Field(..., min_length=3, max_length=40)
+    pin: str = Field(..., min_length=4, max_length=4)
+
+class ConsumerPayUnitRequest(BaseModel):
+    unit_id: str = Field(..., min_length=3, max_length=60)
+    amount_ubu: float = Field(..., gt=0, description="Amount to pay in UBU (1 UBU = R1.00)")
+    items_description: str = Field("Spaza UBU Purchase", min_length=1, max_length=200)
+    source_mode: str = Field("AUTO", description="AUTO, PERSONAL_UBU, FAMILY_POOL, or BENEFICIARY_POOL")
+    sponsor_username: Optional[str] = None
 
 class StaffResponse(BaseModel):
     id: str

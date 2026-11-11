@@ -153,6 +153,7 @@ def init_db():
         member_username TEXT NOT NULL,
         link_type TEXT NOT NULL,
         relationship_label TEXT NOT NULL DEFAULT 'Member',
+        family_role TEXT NOT NULL DEFAULT 'FAMILY_MEMBER',
         status TEXT NOT NULL DEFAULT 'ACCEPTED',
         allocation_limit_ubu REAL NOT NULL DEFAULT 0.0,
         period TEXT NOT NULL DEFAULT 'DAILY',
@@ -162,6 +163,7 @@ def init_db():
         created_at TEXT NOT NULL
     );
     """)
+    _ensure_column(cursor, "consumer_links", "family_role", "TEXT NOT NULL DEFAULT 'FAMILY_MEMBER'")
     cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_consumer_link_pair ON consumer_links(sponsor_username, member_username, link_type);")
 
     # 8. UbuOne RBAC Staff Accounts (Unit Owners, Cashiers, Network Admin)
@@ -195,6 +197,21 @@ def init_db():
         full_name TEXT NOT NULL,
         unit_id TEXT,
         role TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        expires_at TEXT NOT NULL
+    );
+    """)
+
+    # 9b. UbuOne Consumer & Family RBAC Auth Sessions
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS ubuone_consumer_sessions (
+        token TEXT PRIMARY KEY,
+        customer_id TEXT NOT NULL,
+        username TEXT NOT NULL,
+        full_name TEXT NOT NULL,
+        account_type TEXT NOT NULL,
+        consumer_role TEXT NOT NULL,
+        family_parent_username TEXT,
         created_at TEXT NOT NULL,
         expires_at TEXT NOT NULL
     );
@@ -261,21 +278,25 @@ def init_db():
 
     # Seed Family Links & Individual Beneficiary Invitations
     sample_links = [
-        ("lnk_fam_01", "morake_ext_5", "mannimorake", "FAMILY_MEMBER", "Spouse / Parent", "ACCEPTED", 150.00, "DAILY", 0.0, today_str, "All Spaza Goods", now),
-        ("lnk_fam_02", "morake_ext_5", "azariamorake", "FAMILY_MEMBER", "Adult Son", "ACCEPTED", 150.00, "DAILY", 0.0, today_str, "All Spaza Goods", now),
-        ("lnk_fam_03", "morake_ext_5", "lethabomorake", "FAMILY_MEMBER", "School Child", "ACCEPTED", 10.00, "DAILY", 0.0, today_str, "Snacks & School Lunch", now),
-        ("lnk_ben_01", "azaria", "lerato", "BENEFICIARY", "Girlfriend", "ACCEPTED", 100.00, "WEEKLY", 0.0, today_str, "Groceries & Essentials", now),
-        ("lnk_ben_02", "sipho", "mannini", "BENEFICIARY", "Sister", "PENDING", 80.00, "WEEKLY", 0.0, today_str, "Groceries & Essentials", now),
+        ("lnk_fam_01", "morake_ext_5", "mannimorake", "FAMILY_MEMBER", "Spouse / Co-Admin", "FAMILY_ADMIN", "ACCEPTED", 150.00, "DAILY", 0.0, today_str, "All Spaza Goods", now),
+        ("lnk_fam_02", "morake_ext_5", "azariamorake", "FAMILY_MEMBER", "Adult Son", "FAMILY_MEMBER", "ACCEPTED", 150.00, "DAILY", 0.0, today_str, "All Spaza Goods", now),
+        ("lnk_fam_03", "morake_ext_5", "lethabomorake", "FAMILY_MEMBER", "School Child", "FAMILY_MEMBER", "ACCEPTED", 10.00, "DAILY", 0.0, today_str, "Snacks & School Lunch", now),
+        ("lnk_ben_01", "azaria", "lerato", "BENEFICIARY", "Girlfriend", "FAMILY_MEMBER", "ACCEPTED", 100.00, "WEEKLY", 0.0, today_str, "Groceries & Essentials", now),
+        ("lnk_ben_02", "sipho", "mannini", "BENEFICIARY", "Sister", "FAMILY_MEMBER", "PENDING", 80.00, "WEEKLY", 0.0, today_str, "Groceries & Essentials", now),
     ]
     for lnk in sample_links:
         cursor.execute("""
         INSERT OR IGNORE INTO consumer_links (
             id, sponsor_username, member_username, link_type, relationship_label,
-            status, allocation_limit_ubu, period, spent_in_period_ubu, last_reset_date,
+            family_role, status, allocation_limit_ubu, period, spent_in_period_ubu, last_reset_date,
             allowed_categories, created_at
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
         """, lnk)
+    cursor.execute("""
+    UPDATE consumer_links SET family_role = 'FAMILY_ADMIN'
+    WHERE sponsor_username = 'morake_ext_5' AND member_username = 'mannimorake' AND id = 'lnk_fam_01';
+    """)
 
     # Seed Unit-Scoped Reward Ubuntu Tokens
     sample_tokens = [

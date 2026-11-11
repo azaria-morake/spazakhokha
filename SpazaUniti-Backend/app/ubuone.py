@@ -486,3 +486,4 @@ def get_network_admin_summary() -> Dict[str, Any]:
         "counter_sales_volume_ubu": round(float(counter_vol), 2),
         "recent_ledger": recent_ledger
     }
+
