@@ -67,8 +67,14 @@ def get_nearby_units(
         # Extract top promo & loyalty summary
         active_promos = [p for p in promos if p.get("active", True)]
         top_promo = active_promos[0]["title"] if active_promos else None
-        has_loyalty = bool(loyalty.get("active", False) and loyalty.get("title"))
-        loyalty_summary = loyalty.get("reward_description") if has_loyalty else None
+        if isinstance(loyalty, dict) and "programs" in loyalty:
+            active_programs = [p for p in loyalty.get("programs", []) if p.get("active", True)]
+            primary = loyalty.get("primary") or (active_programs[0] if active_programs else {})
+            has_loyalty = len(active_programs) > 0 or bool(primary.get("active", False) and primary.get("title"))
+            loyalty_summary = primary.get("reward_description") if has_loyalty else None
+        else:
+            has_loyalty = bool(isinstance(loyalty, dict) and loyalty.get("active", False) and loyalty.get("title"))
+            loyalty_summary = loyalty.get("reward_description") if has_loyalty else None
 
         # Apply feature filters if specified
         if filter_type == "promos" and len(active_promos) == 0:
@@ -180,6 +186,7 @@ def get_unit_detail(
         "loyalty_program": loyalty,
         "loyalty_programs": loyalty_list,
         "jobs": jobs,
+        "ubu_balance": float(unit.get("ubu_balance") or 0.0),
         "updated_at": unit["updated_at"]
     }
 
