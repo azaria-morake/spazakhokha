@@ -136,3 +136,112 @@ export async function spendUbuntuTokens(username, unitId = "unit-104", amount = 
   return await res.json();
 }
 
+export async function searchConsumers(query, excludeUsername = "") {
+  try {
+    const params = new URLSearchParams({ q: query });
+    if (excludeUsername) params.set("exclude", excludeUsername.replace(/^@/, ""));
+    const res = await fetch(`${API_BASE}/api/customers/search?${params.toString()}`);
+    if (!res.ok) return [];
+    return await res.json();
+  } catch {
+    return [];
+  }
+}
+
+export async function fundUbuWallet(username, amount, source = "OPEN_PAYMENTS", note = "Single Open Payments UBU Funding") {
+  const clean = username.replace(/^@/, "");
+  const res = await fetch(`${API_BASE}/api/wallets/${clean}/fund-ubu`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ amount, source, note })
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.detail || "Funding UBU wallet failed");
+  }
+  return await res.json();
+}
+
+export async function addFamilyMember(familyUsername, payload) {
+  const clean = familyUsername.replace(/^@/, "");
+  const res = await fetch(`${API_BASE}/api/consumers/families/${clean}/members`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.detail || "Failed to add family member");
+  }
+  return await res.json();
+}
+
+export async function updateFamilyMember(familyUsername, memberUsername, payload) {
+  const fam = familyUsername.replace(/^@/, "");
+  const mem = memberUsername.replace(/^@/, "");
+  const res = await fetch(`${API_BASE}/api/consumers/families/${fam}/members/${mem}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.detail || "Failed to update member");
+  }
+  return await res.json();
+}
+
+export async function inviteBeneficiary(sponsorUsername, payload) {
+  const clean = sponsorUsername.replace(/^@/, "");
+  const res = await fetch(`${API_BASE}/api/consumers/${clean}/beneficiaries/invite`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.detail || "Failed to send beneficiary invitation");
+  }
+  return await res.json();
+}
+
+export async function respondToInvitation(linkId, username, action) {
+  const clean = username.replace(/^@/, "");
+  const res = await fetch(`${API_BASE}/api/consumers/invitations/${linkId}/respond?username=${encodeURIComponent(clean)}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action })
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.detail || "Failed to respond to invitation");
+  }
+  return await res.json();
+}
+
+export async function allocateToBeneficiary(sponsorUsername, linkId, payload) {
+  const clean = sponsorUsername.replace(/^@/, "");
+  const res = await fetch(`${API_BASE}/api/consumers/${clean}/beneficiaries/${linkId}/allocate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.detail || "Failed to allocate UBU");
+  }
+  return await res.json();
+}
+
+export async function removeBeneficiaryLink(username, linkId) {
+  const clean = username.replace(/^@/, "");
+  const res = await fetch(`${API_BASE}/api/consumers/${clean}/beneficiaries/${linkId}`, {
+    method: "DELETE"
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.detail || "Failed to remove link");
+  }
+  return await res.json();
+}
+

@@ -47,21 +47,31 @@ export default function App() {
   const [pendingGrant, setPendingGrant] = useState(null);
   const [applyTokens, setApplyTokens] = useState(false);
 
+  const mergeCustomerPayload = (prev, data) => ({
+    ...prev,
+    username: data.username || prev.username,
+    balance: data.balance ?? prev.balance,
+    ubu_balance: data.ubu_balance ?? prev.ubu_balance ?? 0.0,
+    account_type: data.account_type || prev.account_type || 'INDIVIDUAL',
+    family_parent_username: data.family_parent_username ?? prev.family_parent_username ?? null,
+    open_payments_id: data.open_payments_id || prev.open_payments_id,
+    name: data.full_name || prev.name,
+    stamps: data.stamps || prev.stamps,
+    ubuntu_tokens: data.ubuntu_tokens || prev.ubuntu_tokens || {},
+    total_ubuntu_tokens: data.total_ubuntu_tokens ?? prev.total_ubuntu_tokens ?? 0.0,
+    cashout_eligible: data.cashout_eligible ?? false,
+    family_members: data.family_members || [],
+    beneficiaries: data.beneficiaries || [],
+    incoming_allocations: data.incoming_allocations || [],
+    pending_invitations_count: data.pending_invitations_count || 0
+  });
+
   // Sync customer from backend on mount
   useEffect(() => {
     async function loadCustomerData() {
       const data = await fetchCustomer(currentCustomer.username);
       if (data) {
-        setCurrentCustomer(prev => ({
-          ...prev,
-          balance: data.balance,
-          open_payments_id: data.open_payments_id,
-          name: data.full_name || prev.name,
-          stamps: data.stamps || prev.stamps,
-          ubuntu_tokens: data.ubuntu_tokens || prev.ubuntu_tokens || {},
-          total_ubuntu_tokens: data.total_ubuntu_tokens || prev.total_ubuntu_tokens || 0.0,
-          cashout_eligible: data.cashout_eligible ?? false
-        }));
+        setCurrentCustomer(prev => mergeCustomerPayload(prev, data));
       }
     }
     loadCustomerData();
@@ -318,13 +328,7 @@ export default function App() {
         onRefreshCustomer={async () => {
           const updated = await fetchCustomer(currentCustomer.username);
           if (updated) {
-            setCurrentCustomer(prev => ({
-              ...prev,
-              balance: updated.balance,
-              ubuntu_tokens: updated.ubuntu_tokens || prev.ubuntu_tokens,
-              total_ubuntu_tokens: updated.total_ubuntu_tokens || prev.total_ubuntu_tokens,
-              cashout_eligible: updated.cashout_eligible ?? false
-            }));
+            setCurrentCustomer(prev => mergeCustomerPayload(prev, updated));
           }
         }}
       />

@@ -91,9 +91,12 @@ export const TOWNSHIPS = [
 ];
 
 export const DEMO_CUSTOMERS = [
-  { username: "mannini", name: "Mannini Morake", avatar: "M", balance: 150.00, points: 245, stamps: 6 },
-  { username: "sipho", name: "Sipho Dlamini", avatar: "S", balance: 84.00, points: 130, stamps: 6 },
-  { username: "azaria", name: "Azaria Morake", avatar: "A", balance: 250.00, points: 310, stamps: 2 },
-  { username: "thandi", name: "Mama Thandi", avatar: "T", balance: 400.00, points: 520, stamps: 9 }
+  { username: "mannini", name: "Mannini Morake", avatar: "M", account_type: "INDIVIDUAL", balance: 250.00, ubu_balance: 140.00, points: 245, stamps: 6 },
+  { username: "morake_ext_5", name: "Morake Household Vault", avatar: "F", account_type: "FAMILY", balance: 600.00, ubu_balance: 500.00, points: 400, stamps: 9 },
+  { username: "lethabomorake", name: "Lethabo Morake (Child)", avatar: "L", account_type: "INDIVIDUAL", balance: 0.00, ubu_balance: 0.00, points: 20, stamps: 1 },
+  { username: "azaria", name: "Azaria Morake", avatar: "A", account_type: "INDIVIDUAL", balance: 320.00, ubu_balance: 350.00, points: 310, stamps: 2 },
+  { username: "lerato", name: "Lerato Mokoena", avatar: "L", account_type: "INDIVIDUAL", balance: 100.00, ubu_balance: 35.00, points: 80, stamps: 3 },
+  { username: "sipho", name: "Sipho Ndlovu", avatar: "S", account_type: "INDIVIDUAL", balance: 180.00, ubu_balance: 220.00, points: 130, stamps: 6 },
+  { username: "thandi", name: "Mama Thandi Zulu", avatar: "T", account_type: "INDIVIDUAL", balance: 140.00, ubu_balance: 95.00, points: 520, stamps: 9 }
 ];
 
