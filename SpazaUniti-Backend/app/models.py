@@ -259,9 +259,9 @@ class TransactionResponse(BaseModel):
     created_at: str
 
 # -----------------------------------------------------------------------------
-# UbuFlow RBAC, Counter Till, Offerings & Batched Settlement Models
+# UbuOne RBAC, Counter Till, Offerings & Batched Settlement Models
 # -----------------------------------------------------------------------------
-class UbuFlowLoginRequest(BaseModel):
+class UbuOneLoginRequest(BaseModel):
     username: str = Field(..., min_length=3, max_length=40)
     passcode: str = Field(..., min_length=4, max_length=32)
 

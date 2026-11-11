@@ -2,7 +2,7 @@ import os
 import uuid
 from datetime import datetime
 from typing import List, Dict, Any, Optional
-from fastapi import FastAPI, HTTPException, Request, Depends, Header
+from fastapi import FastAPI, HTTPException, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 
@@ -34,7 +34,7 @@ from .models import (
     CashoutResponse,
     SpendTokensRequest,
     SpendTokensResponse,
-    UbuFlowLoginRequest,
+    UbuOneLoginRequest,
     StaffResponse,
     StaffCreateRequest,
     CounterChargeRequest,
@@ -73,7 +73,7 @@ from .rbac import (
     create_unit_staff,
     toggle_unit_staff
 )
-from .ubuflow import (
+from .ubuone import (
     get_unit_overview,
     process_counter_charge,
     issue_change_in_ubu,
@@ -90,7 +90,7 @@ from .ubuflow import (
 )
 
 app = FastAPI(
-    title="UbuFlow x Spaza Uniti Engine",
+    title="UbuOne x Spaza Uniti Engine",
     description="Consolidated Open Payments, Two-Bucket UBU Micro-Ledger, Consumer Family/Beneficiary Wallets, and Unit RBAC Operations.",
     version="2.0.0"
 )
@@ -111,7 +111,7 @@ def on_startup():
 def get_service_info():
     base_url = get_base_url()
     return {
-        "service": "UbuFlow x Spaza Uniti Core Engine",
+        "service": "UbuOne x Spaza Uniti Core Engine",
         "tagline": "Built for R1 Moments. Powered by Open Payments.",
         "network": "Interledger Protocol / Open Payments ZAR + UBU Edge Ledger",
         "open_payments_version": "1.0",
@@ -119,7 +119,7 @@ def get_service_info():
         "endpoints": {
             "register_customer": f"{base_url}/api/customers/register",
             "search_consumers": f"{base_url}/api/customers/search?q=lerato",
-            "ubuflow_login": f"{base_url}/api/ubuflow/auth/login",
+            "ubuone_login": f"{base_url}/api/ubuone/auth/login",
             "resolve_handle": f"{base_url}/api/resolve/{{username}}",
             "wallet_discovery": f"{base_url}/{{username}}"
         }
@@ -148,7 +148,6 @@ def register_customer(payload: CustomerRegisterRequest):
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     pin_hashed = hash_pin(payload.pin)
 
-    # Demo welcome float: 100 ZAR Open Payments + 100 Spendable UBU (or 200 UBU for new Family Vault)
     initial_fiat = 100.00
     initial_ubu = 200.00 if payload.account_type == "FAMILY" else 100.00
 
@@ -318,30 +317,30 @@ def get_customer_transactions(username: str):
     return [TransactionResponse(**dict(r), currency="ZAR") for r in rows]
 
 # -----------------------------------------------------------------------------
-# 4. UbuFlow Operator Portal (RBAC Auth + Counter Till + Settlements + Offerings)
+# 4. UbuOne Operator Portal (RBAC Auth + Counter Till + Settlements + Offerings)
 # -----------------------------------------------------------------------------
-@app.post("/api/ubuflow/auth/login")
-def ubuflow_login(payload: UbuFlowLoginRequest):
+@app.post("/api/ubuone/auth/login")
+def ubuone_login(payload: UbuOneLoginRequest):
     return login_staff(payload)
 
-@app.get("/api/ubuflow/auth/me")
-def ubuflow_me(staff: Dict[str, Any] = Depends(get_current_staff)):
+@app.get("/api/ubuone/auth/me")
+def ubuone_me(staff: Dict[str, Any] = Depends(get_current_staff)):
     return staff
 
-@app.post("/api/ubuflow/auth/logout")
-def ubuflow_logout(token: str = Depends(extract_token)):
+@app.post("/api/ubuone/auth/logout")
+def ubuone_logout(token: str = Depends(extract_token)):
     return logout_staff(token)
 
-@app.get("/api/ubuflow/units/{unit_id}/overview")
-def ubuflow_unit_overview(
+@app.get("/api/ubuone/units/{unit_id}/overview")
+def ubuone_unit_overview(
     unit_id: str,
     staff: Dict[str, Any] = Depends(require_roles(["UNIT_CASHIER", "UNIT_OWNER", "NETWORK_ADMIN"]))
 ):
     assert_unit_scope(staff, unit_id)
     return get_unit_overview(unit_id, staff)
 
-@app.post("/api/ubuflow/units/{unit_id}/counter/charge")
-def ubuflow_counter_charge(
+@app.post("/api/ubuone/units/{unit_id}/counter/charge")
+def ubuone_counter_charge(
     unit_id: str,
     payload: CounterChargeRequest,
     staff: Dict[str, Any] = Depends(require_roles(["UNIT_CASHIER", "UNIT_OWNER", "NETWORK_ADMIN"]))
@@ -349,8 +348,8 @@ def ubuflow_counter_charge(
     assert_unit_scope(staff, unit_id)
     return process_counter_charge(unit_id, staff, payload)
 
-@app.post("/api/ubuflow/units/{unit_id}/counter/change-in-ubu")
-def ubuflow_change_in_ubu(
+@app.post("/api/ubuone/units/{unit_id}/counter/change-in-ubu")
+def ubuone_change_in_ubu(
     unit_id: str,
     payload: ChangeInUbuRequest,
     staff: Dict[str, Any] = Depends(require_roles(["UNIT_CASHIER", "UNIT_OWNER", "NETWORK_ADMIN"]))
@@ -358,8 +357,8 @@ def ubuflow_change_in_ubu(
     assert_unit_scope(staff, unit_id)
     return issue_change_in_ubu(unit_id, staff, payload)
 
-@app.post("/api/ubuflow/units/{unit_id}/settlements")
-def ubuflow_unit_settlement(
+@app.post("/api/ubuone/units/{unit_id}/settlements")
+def ubuone_unit_settlement(
     unit_id: str,
     payload: UnitSettlementRequest,
     staff: Dict[str, Any] = Depends(require_roles(["UNIT_OWNER", "NETWORK_ADMIN"]))
@@ -367,16 +366,16 @@ def ubuflow_unit_settlement(
     assert_unit_scope(staff, unit_id)
     return create_unit_settlement(unit_id, staff, payload)
 
-@app.get("/api/ubuflow/units/{unit_id}/staff", response_model=List[StaffResponse])
-def ubuflow_list_staff(
+@app.get("/api/ubuone/units/{unit_id}/staff", response_model=List[StaffResponse])
+def ubuone_list_staff(
     unit_id: str,
     staff: Dict[str, Any] = Depends(require_roles(["UNIT_OWNER", "NETWORK_ADMIN"]))
 ):
     assert_unit_scope(staff, unit_id)
     return list_unit_staff(unit_id)
 
-@app.post("/api/ubuflow/units/{unit_id}/staff", response_model=StaffResponse)
-def ubuflow_create_staff(
+@app.post("/api/ubuone/units/{unit_id}/staff", response_model=StaffResponse)
+def ubuone_create_staff(
     unit_id: str,
     payload: StaffCreateRequest,
     staff: Dict[str, Any] = Depends(require_roles(["UNIT_OWNER", "NETWORK_ADMIN"]))
@@ -384,8 +383,8 @@ def ubuflow_create_staff(
     assert_unit_scope(staff, unit_id)
     return create_unit_staff(unit_id, payload)
 
-@app.put("/api/ubuflow/units/{unit_id}/staff/{staff_id}/toggle", response_model=StaffResponse)
-def ubuflow_toggle_staff(
+@app.put("/api/ubuone/units/{unit_id}/staff/{staff_id}/toggle", response_model=StaffResponse)
+def ubuone_toggle_staff(
     unit_id: str,
     staff_id: str,
     staff: Dict[str, Any] = Depends(require_roles(["UNIT_OWNER", "NETWORK_ADMIN"]))
@@ -393,16 +392,16 @@ def ubuflow_toggle_staff(
     assert_unit_scope(staff, unit_id)
     return toggle_unit_staff(unit_id, staff_id, acting_staff_id=staff["staff_id"])
 
-@app.get("/api/ubuflow/units/{unit_id}/loyalty")
-def ubuflow_get_loyalty(
+@app.get("/api/ubuone/units/{unit_id}/loyalty")
+def ubuone_get_loyalty(
     unit_id: str,
     staff: Dict[str, Any] = Depends(require_roles(["UNIT_CASHIER", "UNIT_OWNER", "NETWORK_ADMIN"]))
 ):
     assert_unit_scope(staff, unit_id)
     return get_unit_loyalty_programs(unit_id)
 
-@app.post("/api/ubuflow/units/{unit_id}/loyalty")
-def ubuflow_create_loyalty(
+@app.post("/api/ubuone/units/{unit_id}/loyalty")
+def ubuone_create_loyalty(
     unit_id: str,
     payload: UnitLoyaltyCreateRequest,
     staff: Dict[str, Any] = Depends(require_roles(["UNIT_OWNER", "NETWORK_ADMIN"]))
@@ -410,8 +409,8 @@ def ubuflow_create_loyalty(
     assert_unit_scope(staff, unit_id)
     return create_unit_loyalty_program(unit_id, payload)
 
-@app.put("/api/ubuflow/units/{unit_id}/loyalty/{program_id}/toggle")
-def ubuflow_toggle_loyalty(
+@app.put("/api/ubuone/units/{unit_id}/loyalty/{program_id}/toggle")
+def ubuone_toggle_loyalty(
     unit_id: str,
     program_id: str,
     staff: Dict[str, Any] = Depends(require_roles(["UNIT_OWNER", "NETWORK_ADMIN"]))
@@ -419,8 +418,8 @@ def ubuflow_toggle_loyalty(
     assert_unit_scope(staff, unit_id)
     return toggle_unit_loyalty_program(unit_id, program_id)
 
-@app.delete("/api/ubuflow/units/{unit_id}/loyalty/{program_id}")
-def ubuflow_delete_loyalty(
+@app.delete("/api/ubuone/units/{unit_id}/loyalty/{program_id}")
+def ubuone_delete_loyalty(
     unit_id: str,
     program_id: str,
     staff: Dict[str, Any] = Depends(require_roles(["UNIT_OWNER", "NETWORK_ADMIN"]))
@@ -428,16 +427,16 @@ def ubuflow_delete_loyalty(
     assert_unit_scope(staff, unit_id)
     return delete_unit_loyalty_program(unit_id, program_id)
 
-@app.get("/api/ubuflow/units/{unit_id}/promotions")
-def ubuflow_get_promos(
+@app.get("/api/ubuone/units/{unit_id}/promotions")
+def ubuone_get_promos(
     unit_id: str,
     staff: Dict[str, Any] = Depends(require_roles(["UNIT_CASHIER", "UNIT_OWNER", "NETWORK_ADMIN"]))
 ):
     assert_unit_scope(staff, unit_id)
     return get_unit_promotions(unit_id)
 
-@app.post("/api/ubuflow/units/{unit_id}/promotions")
-def ubuflow_create_promo(
+@app.post("/api/ubuone/units/{unit_id}/promotions")
+def ubuone_create_promo(
     unit_id: str,
     payload: UnitPromoCreateRequest,
     staff: Dict[str, Any] = Depends(require_roles(["UNIT_OWNER", "NETWORK_ADMIN"]))
@@ -445,8 +444,8 @@ def ubuflow_create_promo(
     assert_unit_scope(staff, unit_id)
     return create_unit_promotion(unit_id, payload)
 
-@app.delete("/api/ubuflow/units/{unit_id}/promotions/{promo_id}")
-def ubuflow_delete_promo(
+@app.delete("/api/ubuone/units/{unit_id}/promotions/{promo_id}")
+def ubuone_delete_promo(
     unit_id: str,
     promo_id: str,
     staff: Dict[str, Any] = Depends(require_roles(["UNIT_OWNER", "NETWORK_ADMIN"]))
@@ -454,8 +453,8 @@ def ubuflow_delete_promo(
     assert_unit_scope(staff, unit_id)
     return delete_unit_promotion(unit_id, promo_id)
 
-@app.put("/api/ubuflow/units/{unit_id}/broadcast")
-def ubuflow_toggle_broadcast(
+@app.put("/api/ubuone/units/{unit_id}/broadcast")
+def ubuone_toggle_broadcast(
     unit_id: str,
     enabled: bool = True,
     staff: Dict[str, Any] = Depends(require_roles(["UNIT_OWNER", "NETWORK_ADMIN"]))
@@ -463,8 +462,8 @@ def ubuflow_toggle_broadcast(
     assert_unit_scope(staff, unit_id)
     return toggle_unit_broadcast(unit_id, enabled)
 
-@app.get("/api/ubuflow/admin/overview")
-def ubuflow_network_overview(
+@app.get("/api/ubuone/admin/overview")
+def ubuone_network_overview(
     staff: Dict[str, Any] = Depends(require_roles(["NETWORK_ADMIN"]))
 ):
     return get_network_admin_summary()

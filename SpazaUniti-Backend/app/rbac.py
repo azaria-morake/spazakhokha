@@ -3,9 +3,9 @@ from datetime import datetime, timedelta
 from typing import Dict, Any, List, Optional
 from fastapi import Header, HTTPException, Depends
 from .database import get_db, hash_pin, verify_pin
-from .models import UbuFlowLoginRequest, StaffCreateRequest
+from .models import UbuOneLoginRequest, StaffCreateRequest
 
-def login_staff(payload: UbuFlowLoginRequest) -> Dict[str, Any]:
+def login_staff(payload: UbuOneLoginRequest) -> Dict[str, Any]:
     clean_user = payload.username.strip().lower().lstrip("@")
     conn = get_db()
     cursor = conn.cursor()
@@ -20,13 +20,13 @@ def login_staff(payload: UbuFlowLoginRequest) -> Dict[str, Any]:
         conn.close()
         raise HTTPException(status_code=403, detail="Operator account is suspended. Contact your Unit Owner.")
 
-    token = f"uf_{uuid.uuid4().hex}"
+    token = f"u1_{uuid.uuid4().hex}"
     now = datetime.now()
     now_str = now.strftime("%Y-%m-%d %H:%M:%S")
     expires_str = (now + timedelta(hours=24)).strftime("%Y-%m-%d %H:%M:%S")
 
     cursor.execute("""
-    INSERT INTO ubuflow_sessions (token, staff_id, username, full_name, unit_id, role, created_at, expires_at)
+    INSERT INTO ubuone_sessions (token, staff_id, username, full_name, unit_id, role, created_at, expires_at)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?);
     """, (token, staff["id"], staff["username"], staff["full_name"], staff["unit_id"], staff["role"], now_str, expires_str))
 
@@ -55,27 +55,27 @@ def login_staff(payload: UbuFlowLoginRequest) -> Dict[str, Any]:
 def logout_staff(token: str) -> Dict[str, str]:
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute("DELETE FROM ubuflow_sessions WHERE token = ?", (token,))
+    cursor.execute("DELETE FROM ubuone_sessions WHERE token = ?", (token,))
     conn.commit()
     conn.close()
     return {"status": "logged_out"}
 
 def extract_token(
-    x_ubuflow_token: Optional[str] = Header(None, alias="X-UbuFlow-Token"),
+    x_ubuone_token: Optional[str] = Header(None, alias="X-UbuOne-Token"),
     authorization: Optional[str] = Header(None)
 ) -> str:
-    if x_ubuflow_token:
-        return x_ubuflow_token.strip()
+    if x_ubuone_token:
+        return x_ubuone_token.strip()
     if authorization and authorization.lower().startswith("bearer "):
         return authorization.split(" ", 1)[1].strip()
-    raise HTTPException(status_code=401, detail="Missing UbuFlow RBAC authentication token")
+    raise HTTPException(status_code=401, detail="Missing UbuOne RBAC authentication token")
 
 def get_current_staff(token: str = Depends(extract_token)) -> Dict[str, Any]:
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute("""
     SELECT s.*, u.active AS staff_still_active
-    FROM ubuflow_sessions s
+    FROM ubuone_sessions s
     JOIN unit_staff u ON s.staff_id = u.id
     WHERE s.token = ?;
     """, (token,))
@@ -83,7 +83,7 @@ def get_current_staff(token: str = Depends(extract_token)) -> Dict[str, Any]:
     conn.close()
 
     if not row:
-        raise HTTPException(status_code=401, detail="Invalid or expired UbuFlow session. Please sign in.")
+        raise HTTPException(status_code=401, detail="Invalid or expired UbuOne session. Please sign in.")
     if not row["staff_still_active"]:
         raise HTTPException(status_code=403, detail="Operator access has been revoked by Unit Owner.")
 
@@ -196,3 +196,4 @@ def toggle_unit_staff(unit_id: str, staff_id: str, acting_staff_id: str) -> Dict
         "active": bool(new_active),
         "created_at": row["created_at"]
     }
+

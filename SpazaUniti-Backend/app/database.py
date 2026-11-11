@@ -102,7 +102,7 @@ def init_db():
     );
     """)
 
-    # 5. Units (Registered Spaza Stores / UbuFlow Nodes)
+    # 5. Units (Registered Spaza Stores / UbuOne Nodes)
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS units (
         id TEXT PRIMARY KEY,
@@ -164,7 +164,7 @@ def init_db():
     """)
     cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_consumer_link_pair ON consumer_links(sponsor_username, member_username, link_type);")
 
-    # 8. UbuFlow RBAC Staff Accounts (Unit Owners, Cashiers, Network Admin)
+    # 8. UbuOne RBAC Staff Accounts (Unit Owners, Cashiers, Network Admin)
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS unit_staff (
         id TEXT PRIMARY KEY,
@@ -178,9 +178,17 @@ def init_db():
     );
     """)
 
-    # 9. UbuFlow RBAC Auth Sessions
+    # 9. UbuOne RBAC Auth Sessions (migrate if legacy ubuflow_sessions exists)
+    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='ubuflow_sessions'")
+    if cursor.fetchone():
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='ubuone_sessions'")
+        if not cursor.fetchone():
+            cursor.execute("ALTER TABLE ubuflow_sessions RENAME TO ubuone_sessions")
+        else:
+            cursor.execute("DROP TABLE ubuflow_sessions")
+
     cursor.execute("""
-    CREATE TABLE IF NOT EXISTS ubuflow_sessions (
+    CREATE TABLE IF NOT EXISTS ubuone_sessions (
         token TEXT PRIMARY KEY,
         staff_id TEXT NOT NULL,
         username TEXT NOT NULL,
@@ -192,9 +200,17 @@ def init_db():
     );
     """)
 
-    # 10. UbuFlow Micro-Ledger & Unit Operations Log
+    # 10. UbuOne Micro-Ledger & Unit Operations Log (migrate if legacy ubuflow_ledger exists)
+    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='ubuflow_ledger'")
+    if cursor.fetchone():
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='ubuone_ledger'")
+        if not cursor.fetchone():
+            cursor.execute("ALTER TABLE ubuflow_ledger RENAME TO ubuone_ledger")
+        else:
+            cursor.execute("DROP TABLE ubuflow_ledger")
+
     cursor.execute("""
-    CREATE TABLE IF NOT EXISTS ubuflow_ledger (
+    CREATE TABLE IF NOT EXISTS ubuone_ledger (
         id TEXT PRIMARY KEY,
         event_type TEXT NOT NULL,
         unit_id TEXT,
@@ -341,7 +357,7 @@ def init_db():
 
         sample_units = [
             (
-                "unit-104", "Khumalo Spaza Store", "Fresh bakery, R1 snacks, staples & UbuFlow node",
+                "unit-104", "Khumalo Spaza Store", "Fresh bakery, R1 snacks, staples & UbuOne node",
                 "Baba Khumalo", "072 123 4567", "27721234567",
                 "Shop 14, Zone 3, Dobsonville", "Soweto", "Near Dobsonville Police Station",
                 -26.2234, 27.8681, f"{base_url}/unit-104", "$spazauniti.org/unit-104",
@@ -385,10 +401,11 @@ def init_db():
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
         """, sample_units)
 
-    # Give existing unit-104 an initial UbuFlow balance if upgrading an older DB with 0.0
+    # Give existing unit-104 an initial UbuOne balance if upgrading an older DB with 0.0
     cursor.execute("UPDATE units SET ubu_balance = 645.50 WHERE id = 'unit-104' AND ubu_balance = 0.0")
+    cursor.execute("UPDATE units SET tagline = 'Fresh bakery, R1 snacks, staples & UbuOne node' WHERE id = 'unit-104' AND tagline LIKE '%UbuFlow%'")
 
-    # Seed UbuFlow RBAC Staff Accounts
+    # Seed UbuOne RBAC Staff Accounts
     sample_staff = [
         ("staff_104_owner", "unit-104", "khumalo_owner", "Baba Khumalo", "UNIT_OWNER", hash_pin("1040"), 1, now),
         ("staff_104_cashier", "unit-104", "thabo_cashier", "Thabo Maseko", "UNIT_CASHIER", hash_pin("1111"), 1, now),
@@ -401,17 +418,17 @@ def init_db():
         VALUES (?, ?, ?, ?, ?, ?, ?, ?);
         """, s)
 
-    # Seed initial UbuFlow Ledger examples if empty
-    cursor.execute("SELECT COUNT(*) FROM ubuflow_ledger")
+    # Seed initial UbuOne Ledger examples if empty
+    cursor.execute("SELECT COUNT(*) FROM ubuone_ledger")
     if cursor.fetchone()[0] == 0:
         sample_ledger = [
-            ("ufl_001", "UBU_DEPOSIT", None, None, "OPEN_PAYMENTS", "morake_ext_5", 500.00, 0.0, "1 Single Open Payments Inflow -> Family UBU Vault", "OPEN_PAYMENTS", now),
-            ("ufl_002", "COUNTER_SALE", "unit-104", "thabo_cashier", "lethabomorake", "unit-104", 1.00, 0.0, "R1 Lollipop (Debited @morake_ext_5 allowance)", "FAMILY_POOL", now),
-            ("ufl_003", "CHANGE_IN_UBU", "unit-104", "thabo_cashier", "unit-104", "mannini", 1.50, 0.0, "R20 cash for R18.50 bread -> 1.50 UBU change", "CASH_DRAWER", now),
-            ("ufl_004", "BENEFICIARY_TRANSFER", None, None, "azaria", "lerato", 50.00, 0.0, "Zero-fee UBU allocation to Girlfriend (@lerato)", "PERSONAL_UBU", now),
+            ("u1l_001", "UBU_DEPOSIT", None, None, "OPEN_PAYMENTS", "morake_ext_5", 500.00, 0.0, "1 Single Open Payments Inflow -> Family UBU Vault", "OPEN_PAYMENTS", now),
+            ("u1l_002", "COUNTER_SALE", "unit-104", "thabo_cashier", "lethabomorake", "unit-104", 1.00, 0.0, "R1 Lollipop (Debited @morake_ext_5 allowance)", "FAMILY_POOL", now),
+            ("u1l_003", "CHANGE_IN_UBU", "unit-104", "thabo_cashier", "unit-104", "mannini", 1.50, 0.0, "R20 cash for R18.50 bread -> 1.50 UBU change", "CASH_DRAWER", now),
+            ("u1l_004", "BENEFICIARY_TRANSFER", None, None, "azaria", "lerato", 50.00, 0.0, "Zero-fee UBU allocation to Girlfriend (@lerato)", "PERSONAL_UBU", now),
         ]
         cursor.executemany("""
-        INSERT INTO ubuflow_ledger (
+        INSERT INTO ubuone_ledger (
             id, event_type, unit_id, staff_username, from_username, to_username,
             amount_ubu, fee_zar, description, source_bucket, created_at
         )
@@ -423,4 +440,4 @@ def init_db():
 
 if __name__ == "__main__":
     init_db()
-    print("UbuFlow x SpazaUniti database initialized at:", DB_PATH)
+    print("UbuOne x SpazaUniti database initialized at:", DB_PATH)

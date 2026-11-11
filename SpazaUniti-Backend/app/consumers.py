@@ -184,12 +184,12 @@ def fund_ubu_wallet(username: str, payload: FundUbuRequest) -> Dict[str, Any]:
     cursor.execute("""
     INSERT INTO transactions (id, customer_id, username, type, counterparty, amount, purpose, status, ilp_packet_ref, created_at)
     VALUES (?, ?, ?, 'INCOMING', ?, ?, ?, 'COMPLETED', ?, ?);
-    """, (tx_id, cust["id"], clean, f"UbuFlow Pool ({source})", payload.amount, payload.note or "Deposit to UBU Wallet", ilp_ref, now_str))
+    """, (tx_id, cust["id"], clean, f"UbuOne Pool ({source})", payload.amount, payload.note or "Deposit to UBU Wallet", ilp_ref, now_str))
 
     cursor.execute("""
-    INSERT INTO ubuflow_ledger (id, event_type, unit_id, staff_username, from_username, to_username, amount_ubu, fee_zar, description, source_bucket, created_at)
+    INSERT INTO ubuone_ledger (id, event_type, unit_id, staff_username, from_username, to_username, amount_ubu, fee_zar, description, source_bucket, created_at)
     VALUES (?, 'UBU_DEPOSIT', NULL, NULL, ?, ?, ?, 0.0, ?, ?, ?);
-    """, (f"ufl_{uuid.uuid4().hex[:10]}", source, clean, payload.amount, payload.note or "Single Open Payments UBU Funding", source, now_str))
+    """, (f"u1l_{uuid.uuid4().hex[:10]}", source, clean, payload.amount, payload.note or "Single Open Payments UBU Funding", source, now_str))
 
     conn.commit()
     conn.close()
@@ -453,9 +453,9 @@ def allocate_to_beneficiary(sponsor_username: str, link_id: str, payload: Benefi
     """, (f"tx_{uuid.uuid4().hex[:10]}", ben_row["id"], link["member_username"], f"@{sponsor} (Sponsor)", payload.amount_ubu, note, ilp_ref, now_str))
 
     cursor.execute("""
-    INSERT INTO ubuflow_ledger (id, event_type, unit_id, staff_username, from_username, to_username, amount_ubu, fee_zar, description, source_bucket, created_at)
+    INSERT INTO ubuone_ledger (id, event_type, unit_id, staff_username, from_username, to_username, amount_ubu, fee_zar, description, source_bucket, created_at)
     VALUES (?, 'BENEFICIARY_TRANSFER', NULL, NULL, ?, ?, ?, 0.0, ?, 'PERSONAL_UBU', ?);
-    """, (f"ufl_{uuid.uuid4().hex[:10]}", sponsor, link["member_username"], payload.amount_ubu, note, now_str))
+    """, (f"u1l_{uuid.uuid4().hex[:10]}", sponsor, link["member_username"], payload.amount_ubu, note, now_str))
 
     conn.commit()
     conn.close()
@@ -580,3 +580,4 @@ def debit_consumer_ubu(
         status_code=400,
         detail=f"Insufficient spendable UBU for @{uname} (Personal: {personal_ubu:.2f} UBU; no active allowance covers {amount_ubu:.2f} UBU)"
     )
+

@@ -1,7 +1,7 @@
 import json
 import uuid
 from datetime import datetime
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List
 from fastapi import HTTPException
 from .database import get_db, verify_pin
 from .consumers import debit_consumer_ubu
@@ -45,13 +45,13 @@ def get_unit_overview(unit_id: str, staff: Dict[str, Any]) -> Dict[str, Any]:
 
     if staff["role"] == "UNIT_CASHIER":
         cursor.execute("""
-        SELECT * FROM ubuflow_ledger
+        SELECT * FROM ubuone_ledger
         WHERE unit_id = ? AND staff_username = ?
         ORDER BY created_at DESC LIMIT 50;
         """, (unit_id, staff["username"]))
     else:
         cursor.execute("""
-        SELECT * FROM ubuflow_ledger
+        SELECT * FROM ubuone_ledger
         WHERE unit_id = ?
         ORDER BY created_at DESC LIMIT 100;
         """, (unit_id,))
@@ -115,7 +115,6 @@ def process_counter_charge(unit_id: str, staff: Dict[str, Any], payload: Counter
         conn.close()
         raise HTTPException(status_code=401, detail="Incorrect customer 4-digit Counter Security PIN")
 
-    # Debit personal UBU, family pool, or beneficiary allowance cleanly
     source_bucket, debited_vault, debit_meta = debit_consumer_ubu(
         cursor=cursor,
         cust_row=cust,
@@ -124,12 +123,10 @@ def process_counter_charge(unit_id: str, staff: Dict[str, Any], payload: Counter
         sponsor_username=payload.sponsor_username
     )
 
-    # Credit Unit's UBU Settlement Pool (R0 protocol fee!)
     new_unit_ubu = round(float(unit["ubu_balance"] or 0.0) + payload.amount_ubu, 2)
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     cursor.execute("UPDATE units SET ubu_balance = ?, updated_at = ? WHERE id = ?", (new_unit_ubu, now_str, unit_id))
 
-    # Issue fractional Unit-Scoped Reward UBU loyalty accrual (10% micro-reward example on active snack/bread pact, min 0.10 UBU on >= R1 spend)
     loyalty_earned = round(max(0.10, payload.amount_ubu * 0.10), 2)
     cursor.execute("SELECT * FROM customer_tokens WHERE username = ? AND unit_id = ?", (clean_cust, unit_id))
     tok_row = cursor.fetchone()
@@ -143,18 +140,16 @@ def process_counter_charge(unit_id: str, staff: Dict[str, Any], payload: Counter
             (f"tok_{uuid.uuid4().hex[:8]}", clean_cust, unit_id, new_tok_bal, now_str)
         )
 
-    # Record in UbuFlow Ledger + Customer Transactions
-    ledger_id = f"ufl_{uuid.uuid4().hex[:10]}"
+    ledger_id = f"u1l_{uuid.uuid4().hex[:10]}"
     desc = f"{payload.items_description} ({source_bucket}: @{debited_vault})"
     cursor.execute("""
-    INSERT INTO ubuflow_ledger (
+    INSERT INTO ubuone_ledger (
         id, event_type, unit_id, staff_username, from_username, to_username,
         amount_ubu, fee_zar, description, source_bucket, created_at
     )
     VALUES (?, 'COUNTER_SALE', ?, ?, ?, ?, ?, 0.0, ?, ?, ?);
     """, (ledger_id, unit_id, staff["username"], clean_cust, unit_id, payload.amount_ubu, desc, source_bucket, now_str))
 
-    # Also log transaction against the vault holder so @morake_ext_5 sees what @lethabomorake spent
     tx_owner = debited_vault
     cursor.execute("SELECT id FROM customers WHERE username = ?", (tx_owner,))
     owner_row = cursor.fetchone()
@@ -166,7 +161,7 @@ def process_counter_charge(unit_id: str, staff: Dict[str, Any], payload: Counter
             f"tx_{uuid.uuid4().hex[:10]}", owner_row["id"], tx_owner,
             unit["name"], payload.amount_ubu,
             f"Counter UBU (@{clean_cust}): {payload.items_description}",
-            f"ilp.ubuflow.counter.{uuid.uuid4().hex[:12]}", now_str
+            f"ilp.ubuone.counter.{uuid.uuid4().hex[:12]}", now_str
         ))
 
     conn.commit()
@@ -189,8 +184,7 @@ def process_counter_charge(unit_id: str, staff: Dict[str, Any], payload: Counter
 
 def issue_change_in_ubu(unit_id: str, staff: Dict[str, Any], payload: ChangeInUbuRequest) -> Dict[str, Any]:
     """
-    When a cash buyer doesn't have loose coins (or the shop is short of R1/50c coins),
-    the cashier returns exact change in Uniti-Wide Spendable UBU!
+    Cashier returns exact loose cash change in Uniti-Wide Spendable UBU directly to @handle.
     """
     if payload.cash_received <= payload.sale_total:
         raise HTTPException(status_code=400, detail="cash_received must exceed sale_total to issue Change-in-UBU")
@@ -224,10 +218,10 @@ def issue_change_in_ubu(unit_id: str, staff: Dict[str, Any], payload: ChangeInUb
     cursor.execute("UPDATE units SET ubu_balance = ?, updated_at = ? WHERE id = ?", (new_unit_ubu, now_str, unit_id))
     cursor.execute("UPDATE customers SET ubu_balance = ? WHERE username = ?", (new_cust_ubu, clean_cust))
 
-    ledger_id = f"ufl_{uuid.uuid4().hex[:10]}"
+    ledger_id = f"u1l_{uuid.uuid4().hex[:10]}"
     desc = f"R{payload.cash_received:.2f} cash for R{payload.sale_total:.2f} sale -> {change_ubu:.2f} UBU change ({payload.note})"
     cursor.execute("""
-    INSERT INTO ubuflow_ledger (
+    INSERT INTO ubuone_ledger (
         id, event_type, unit_id, staff_username, from_username, to_username,
         amount_ubu, fee_zar, description, source_bucket, created_at
     )
@@ -240,7 +234,7 @@ def issue_change_in_ubu(unit_id: str, staff: Dict[str, Any], payload: ChangeInUb
     """, (
         f"tx_{uuid.uuid4().hex[:10]}", cust["id"], clean_cust,
         f"{unit['name']} (Change-in-UBU)", change_ubu, desc,
-        f"ilp.ubuflow.change.{uuid.uuid4().hex[:12]}", now_str
+        f"ilp.ubuone.change.{uuid.uuid4().hex[:12]}", now_str
     ))
 
     conn.commit()
@@ -259,9 +253,7 @@ def issue_change_in_ubu(unit_id: str, staff: Dict[str, Any], payload: ChangeInUb
 def create_unit_settlement(unit_id: str, staff: Dict[str, Any], payload: UnitSettlementRequest) -> Dict[str, Any]:
     """
     UNIT_OWNER / NETWORK_ADMIN ONLY.
-    Demonstrates how Units turn collected R1 UBU micro-sales into stock or fiat:
-      - WHOLESALER_OPEN_PAYMENTS: Closed-loop Open Payments transfer (R0 fee!)
-      - BATCHED_BANK_EFT: 1 batched off-ramp payout (R3.50 flat fee amortized across hundreds of R1 sales)
+    Closed-loop Wholesaler Open Payments (R0 fee) vs Batched Bank EFT (R3.50 flat fee).
     """
     stype = payload.settlement_type.strip().upper()
     if stype not in ("BATCHED_BANK_EFT", "WHOLESALER_OPEN_PAYMENTS"):
@@ -291,10 +283,10 @@ def create_unit_settlement(unit_id: str, staff: Dict[str, Any], payload: UnitSet
 
     cursor.execute("UPDATE units SET ubu_balance = ?, updated_at = ? WHERE id = ?", (new_unit_ubu, now_str, unit_id))
 
-    ledger_id = f"ufl_{uuid.uuid4().hex[:10]}"
+    ledger_id = f"u1l_{uuid.uuid4().hex[:10]}"
     desc = f"{stype} -> {payload.destination_pointer} (Net R{net_payout:.2f} settled, Fee R{fee_zar:.2f})"
     cursor.execute("""
-    INSERT INTO ubuflow_ledger (
+    INSERT INTO ubuone_ledger (
         id, event_type, unit_id, staff_username, from_username, to_username,
         amount_ubu, fee_zar, description, source_bucket, created_at
     )
@@ -315,9 +307,6 @@ def create_unit_settlement(unit_id: str, staff: Dict[str, Any], payload: UnitSet
         "message": f"Settled {payload.amount_ubu:.2f} UBU to {payload.destination_pointer} (Fee: R{fee_zar:.2f})."
     }
 
-# -----------------------------------------------------------------------------
-# Consolidated Unit Loyalty & Promotions CRUD (Directly updates units JSON)
-# -----------------------------------------------------------------------------
 def get_unit_loyalty_programs(unit_id: str) -> List[Dict[str, Any]]:
     conn = get_db()
     cursor = conn.cursor()
@@ -480,10 +469,10 @@ def get_network_admin_summary() -> Dict[str, Any]:
     cursor.execute("SELECT COUNT(*), COALESCE(SUM(ubu_balance), 0) FROM customers")
     cust_count, total_cust_ubu = cursor.fetchone()
 
-    cursor.execute("SELECT COUNT(*), COALESCE(SUM(amount_ubu), 0) FROM ubuflow_ledger WHERE event_type = 'COUNTER_SALE'")
+    cursor.execute("SELECT COUNT(*), COALESCE(SUM(amount_ubu), 0) FROM ubuone_ledger WHERE event_type = 'COUNTER_SALE'")
     counter_count, counter_vol = cursor.fetchone()
 
-    cursor.execute("SELECT * FROM ubuflow_ledger ORDER BY created_at DESC LIMIT 30")
+    cursor.execute("SELECT * FROM ubuone_ledger ORDER BY created_at DESC LIMIT 30")
     recent_ledger = [dict(r) for r in cursor.fetchall()]
     conn.close()
 
