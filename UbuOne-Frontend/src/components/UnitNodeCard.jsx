@@ -161,7 +161,7 @@ export function UnitNodeCard({
           <div className="w-full flex items-center justify-between p-3 rounded-xl bg-[#1A254B]/70 border border-white/8 text-xs">
             <span className="text-[#D2D7DF]">Discovery URL</span>
             <a
-              href={`http://localhost:8001/${unitId}`}
+              href={`/${unitId}`}
               target="_blank"
               rel="noreferrer"
               className="inline-flex items-center gap-1 text-[#38C3FF] hover:underline font-mono-code"

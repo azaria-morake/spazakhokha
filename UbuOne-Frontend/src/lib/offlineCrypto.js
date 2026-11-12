@@ -1,7 +1,12 @@
+/**
+ * Client-side Web Crypto (P-256 ECDSA) offline payment engine.
+ * Manages non-extractable IndexedDB device keys, monotonic note counters,
+ * compact QR payload encoding, and local merchant queue persistence.
+ */
 ﻿import jsQR from 'jsqr'
 import QRCode from 'qrcode'
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8001'
+const API_BASE = import.meta.env.VITE_API_URL || ''
 const DB_NAME = 'spazakhokha_ubuone_keys'
 const STORE_NAME = 'device_keys'
 const ISSUER_PUB_KEY = 'spaza_issuer_pub'
@@ -230,6 +235,7 @@ export async function signOfflinePaymentNote({
     v: 1,
     allowance_id: state.allowanceId,
     request_id: requestId,
+    unit_id: unitId,
     wallet: merchantWallet,
     amount: amountCents,
     counter: nextCounter,
@@ -272,7 +278,8 @@ function saveMerchantOfflineQueue(unitId, items) {
   localStorage.setItem(QUEUE_KEY, JSON.stringify(all))
 }
 
-export async function verifyAndQueueOfflinePackage(pkg, expectedMerchantWallet, unitId = 'unit-104') {
+export async function verifyAndQueueOfflinePackage(rawPkg, expectedMerchantWallet, unitId = 'unit-104') {
+  const pkg = parseOfflineQrPayload(rawPkg)
   const issuerPub = getCachedIssuerPub()
   if (!issuerPub) {
     throw new Error('Issuer public key not cached yet. Connect briefly once to sync keys.')
@@ -296,8 +303,12 @@ export async function verifyAndQueueOfflinePackage(pkg, expectedMerchantWallet, 
   if (note.allowance_id !== cert.allowance_id) {
     throw new Error('REJECTED: Note allowance ID does not match certificate.')
   }
+  const noteUnitId = note.unit_id || pkg.unit_id
+  if (unitId && noteUnitId && noteUnitId !== unitId) {
+    throw new Error(`REJECTED: Note is locked to Spaza Unit "${noteUnitId}", not this till ("${unitId}").`)
+  }
   if (expectedMerchantWallet && note.wallet !== expectedMerchantWallet) {
-    throw new Error('REJECTED: Payment note is addressed to a different Spaza Unit.')
+    throw new Error('REJECTED: Payment note is addressed to a different Spaza wallet.')
   }
   if (note.amount > cert.tx_cap || note.spent_before + note.amount > cert.limit) {
     throw new Error('REJECTED: Payment exceeds allowance or transaction cap.')
@@ -360,18 +371,46 @@ export async function settleOfflineQueueBatch(merchantWallet, unitId = 'unit-104
   return { ...data, remainingCount: remaining.length }
 }
 
+export function encodeCompactOfflineQr(pkg) {
+  return JSON.stringify(['v1', pkg.cert, pkg.note, pkg.payer || 'offline_customer', pkg.unit_id || ''])
+}
+
+export function parseOfflineQrPayload(rawText) {
+  const parsed = typeof rawText === 'string' ? JSON.parse(rawText.trim()) : rawText
+  if (Array.isArray(parsed) && parsed[0] === 'v1') {
+    return { cert: parsed[1], note: parsed[2], payer: parsed[3] || 'offline_customer', unit_id: parsed[4] || '' }
+  }
+  return parsed
+}
+
 export async function generateQrDataUrl(payloadObj) {
   const text = typeof payloadObj === 'string' ? payloadObj : JSON.stringify(payloadObj)
   return await QRCode.toDataURL(text, {
-    width: 260,
-    margin: 2,
-    errorCorrectionLevel: 'M',
-    color: { dark: '#0B1128', light: '#FFFFFF' },
+    width: 520,
+    margin: 4,
+    errorCorrectionLevel: 'L',
+    color: { dark: '#000000', light: '#FFFFFF' },
   })
 }
 
 export function decodeQrFromImageData(imageData) {
-  const code = jsQR(imageData.data, imageData.width, imageData.height, {
+  let code = jsQR(imageData.data, imageData.width, imageData.height, {
+    inversionAttempts: 'attemptBoth',
+  })
+  if (code) return code.data
+
+  // Contrast-stretched pass for glossy phone-to-phone screens
+  const boosted = new Uint8ClampedArray(imageData.data.length)
+  const src = imageData.data
+  for (let i = 0; i < src.length; i += 4) {
+    const lum = 0.299 * src[i] + 0.587 * src[i + 1] + 0.114 * src[i + 2]
+    const v = lum < 128 ? Math.max(0, lum * 0.65) : Math.min(255, 128 + (lum - 128) * 1.45)
+    boosted[i] = v
+    boosted[i + 1] = v
+    boosted[i + 2] = v
+    boosted[i + 3] = 255
+  }
+  code = jsQR(boosted, imageData.width, imageData.height, {
     inversionAttempts: 'dontInvert',
   })
   return code ? code.data : null

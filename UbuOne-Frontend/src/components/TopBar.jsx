@@ -187,7 +187,7 @@ export function TopBar({
           </button>
 
           {showNotifs && (
-            <div className="absolute right-0 mt-2 w-80 rounded-2xl bg-[#111B3D] border border-white/15 shadow-2xl p-3 z-50">
+            <div className="fixed inset-x-3 top-28 sm:absolute sm:inset-auto sm:right-0 sm:top-full sm:mt-2 sm:w-80 rounded-2xl bg-[#111B3D] border border-white/15 shadow-2xl p-3 z-50">
               <div className="flex items-center justify-between px-1 pb-2 mb-2 border-b border-white/10">
                 <span className="text-xs font-bold text-white">Recent UbuOne Activity</span>
                 {pendingInvitesCount > 0 && (
@@ -249,7 +249,7 @@ export function TopBar({
           </button>
 
           {showSync && (
-            <div className="absolute right-0 mt-2 w-72 rounded-2xl bg-[#111B3D] border border-white/15 shadow-2xl p-3.5 z-50 space-y-2.5 text-xs">
+            <div className="fixed inset-x-3 top-28 sm:absolute sm:inset-auto sm:right-0 sm:top-full sm:mt-2 sm:w-72 rounded-2xl bg-[#111B3D] border border-white/15 shadow-2xl p-3.5 z-50 space-y-2.5 text-xs">
               <div className="flex items-center gap-2 font-bold text-white">
                 <Radio className="w-4 h-4 text-[#00A2E8]" />
                 SpazaUniti Ecosystem Connected

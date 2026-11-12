@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8001'
+const API_BASE = import.meta.env.VITE_API_URL || ''
 const TOKEN_KEY = 'ubuone_rbac_token'
 const SESSION_TYPE_KEY = 'ubuone_session_type' // 'STAFF' | 'CONSUMER'
 
