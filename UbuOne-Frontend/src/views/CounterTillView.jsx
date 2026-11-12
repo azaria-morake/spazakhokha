@@ -17,6 +17,7 @@ import {
   postCounterCharge,
   searchConsumers,
 } from '../lib/api'
+import { OfflineMerchantTillBox } from '../components/OfflineKhokhaWidgets'
 import { cn, formatShortDate, formatUBU, formatZAR, sanitizeHandle } from '../lib/utils'
 
 const DEMO_HANDLES = [
@@ -38,6 +39,7 @@ export function CounterTillView({ unitId, overview, prefillHandle, onRefresh, sh
   const [itemsDesc, setItemsDesc] = useState('R1 Lollipop & School Snack')
   const [sourceMode, setSourceMode] = useState('AUTO') // AUTO | FAMILY_VAULT | PERSONAL
   const [submittingCharge, setSubmittingCharge] = useState(false)
+  const [offlineTill, setOfflineTill] = useState(false)
 
   // Change-in-UBU form state
   const [cashReceived, setCashReceived] = useState('50')
@@ -275,10 +277,10 @@ export function CounterTillView({ unitId, overview, prefillHandle, onRefresh, sh
                 </p>
               </div>
             </div>
-            <Badge variant="mint">1 UBU = R1</Badge>
+            <button type='button' onClick={() => setOfflineTill(!offlineTill)} className='px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-[#38E4AE]/20 border border-[#38E4AE]/50 text-[#38E4AE] cursor-pointer'>{offlineTill ? 'Online Till' : 'Offline Khokha Till'}</button>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleCounterCharge} className="space-y-4">
+            {offlineTill ? <OfflineMerchantTillBox unitId={unitId} merchantWallet={overview?.wallet_address || "https://ilp.interledger-test.dev/spazakhokha-shop"} showToast={showToast} /> : <form onSubmit={handleCounterCharge} className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs text-[#D2D7DF] mb-1.5 font-medium">
@@ -374,7 +376,7 @@ export function CounterTillView({ unitId, overview, prefillHandle, onRefresh, sh
                   </>
                 )}
               </Button>
-            </form>
+            </form>}
           </CardContent>
         </Card>
 

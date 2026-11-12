@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react'
 import { Building2, CheckCircle2, Landmark, Loader2, ShieldCheck, Truck } from 'lucide-react'
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Input } from '../components/ui/primitives'
 import { postUnitSettlement } from '../lib/api'
+import { OfflineBatchSyncBanner } from '../components/OfflineKhokhaWidgets'
 import { cn, formatShortDate, formatUBU, formatZAR } from '../lib/utils'
 
 const WHOLESALER_PRESETS = [
@@ -52,6 +53,7 @@ export function SettlementsView({ unitId, overview, onRefresh, showToast }) {
 
   return (
     <div className="space-y-6">
+      <OfflineBatchSyncBanner unitId={unitId} merchantWallet={overview?.wallet_address || "https://ilp.interledger-test.dev/spazakhokha-shop"} onRefresh={onRefresh} showToast={showToast} />
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left: UBU-to-Fiat & Wholesaler Payout Form */}
         <Card className="lg:col-span-7">

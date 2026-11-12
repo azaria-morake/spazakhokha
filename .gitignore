@@ -1,0 +1,12 @@
+
+
+# Local secrets & offline preview artifacts
+.env
+*.pem
+*.key
+data.json
+customer_allowance.json
+*.db
+venv/
+__pycache__/
+preview_server.py

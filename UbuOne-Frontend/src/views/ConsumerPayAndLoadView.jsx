@@ -7,6 +7,7 @@ import {
   fundFamilyPoolRBAC,
   payUnitFromConsumer,
 } from '../lib/api'
+import { OfflineConsumerPayBox } from '../components/OfflineKhokhaWidgets'
 import { cn, formatUBU, formatZAR } from '../lib/utils'
 
 const PRESET_ITEMS = [
@@ -28,6 +29,7 @@ export function ConsumerPayUnitView({ actor, workspace, onRefresh, showToast }) 
     role === 'FAMILY_MEMBER' ? 'FAMILY_POOL' : 'AUTO'
   )
   const [busy, setBusy] = useState(false)
+  const [offlineMode, setOfflineMode] = useState(false)
 
   const unit104Tokens = Number(profile.ubuntu_tokens?.['unit-104'] || 0)
 
@@ -112,9 +114,12 @@ export function ConsumerPayUnitView({ actor, workspace, onRefresh, showToast }) 
               <ShoppingBag className="w-4 h-4 text-[#38E4AE]" />
               <CardTitle>Pay Counter at {units.find((x) => x.id === selectedUnit)?.name || selectedUnit}</CardTitle>
             </div>
+            <button type='button' onClick={() => setOfflineMode(!offlineMode)} className='px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-[#38E4AE]/20 border border-[#38E4AE]/50 text-[#38E4AE] cursor-pointer'>{offlineMode ? 'Switch to Online UBU' : 'Offline Khokha QR'}</button>
+            <div className='hidden'>
+            </div>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handlePay} className="space-y-4">
+            {offlineMode ? <OfflineConsumerPayBox actorHandle={actor?.username} unitId={selectedUnit} merchantWallet={units.find((x) => x.id === selectedUnit)?.wallet_address || "https://ilp.interledger-test.dev/spazakhokha-shop"} amount={amount} showToast={showToast} /> : <form onSubmit={handlePay} className="space-y-4">
               <div className="flex flex-wrap gap-2">
                 {PRESET_ITEMS.map((item) => (
                   <button
@@ -179,7 +184,7 @@ export function ConsumerPayUnitView({ actor, workspace, onRefresh, showToast }) 
                 {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
                 Pay {formatUBU(amount)} (R0.00 Fee)
               </Button>
-            </form>
+            </form>}
           </CardContent>
         </Card>
 
@@ -224,6 +229,7 @@ export function ConsumerLoadPoolView({ actor, familyOverview, workspace, onRefre
   const [source, setSource] = useState('OPEN_PAYMENTS')
   const [note, setNote] = useState('Single Open Payments UBU Load')
   const [busy, setBusy] = useState(false)
+  const [offlineMode, setOfflineMode] = useState(false)
 
   const currentUbu =
     role === 'FAMILY_ADMIN' ? famVault.ubu_balance ?? profile.ubu_balance ?? 0 : profile.ubu_balance ?? 0
