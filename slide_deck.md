@@ -10,10 +10,10 @@
 
 **Category:** Financial Inclusion • Open Payments • Interledger Protocol (ILP) • Agentic AI  
 **Team:** UX Giants (Azaria Morake & Team)  
-**Live Demo:**
-- **Spaza Uniti Customer Marketplace:** `http://localhost:3001`
-- **UbuOne Merchant POS & Family RBAC:** `http://localhost:3000`
-- **SpazaKhokha Backend & Open Payments Gateway:** `http://localhost:8001`
+**Live Deployments & Demos:**
+- **Spaza Uniti Marketplace (Live Vercel):** [https://spaza-uniti.vercel.app](https://spaza-uniti.vercel.app) (`http://localhost:3001`)
+- **UbuOne Merchant & Family Portal (Live Vercel):** [https://ubu-one-seven.vercel.app](https://ubu-one-seven.vercel.app) (`http://localhost:3000`)
+- **Backend & Open Payments Gateway:** `http://localhost:8001`
 - **Live Interledger Testnet Wallet:** `$ilp.interledger-test.dev/2f0b6b2c` (Ed25519 Verified)
 
 > *"Local township businesses deserve the financial infrastructure to compete. Local township customers deserve to benefit from that competition."*
@@ -464,6 +464,11 @@ flowchart TD
 │  ✔ Fully committed and pushed across all feature branches                  │
 └────────────────────────────────────────────────────────────────────────────┘
 ```
+
+**Live Deployments & Production URLs:**
+- **Spaza Uniti Marketplace PWA:** [https://spaza-uniti.vercel.app](https://spaza-uniti.vercel.app)
+- **UbuOne Merchant POS & Family Portal:** [https://ubu-one-seven.vercel.app](https://ubu-one-seven.vercel.app)
+- **Live Interledger Testnet Wallet:** `$ilp.interledger-test.dev/2f0b6b2c` (Ed25519 Verified)
 
 **Live Repositories, Branches & Source Links:**
 - **Backend:** `feat/spazauniti-backend` (`ac8b01b`) • Key source files: [open_payments_live.py](file:///home/azaria/ux-giants/spazakhokha/services/uniti-backend/SpazaUniti-Backend/app/open_payments_live.py), [main.py](file:///home/azaria/ux-giants/spazakhokha/services/uniti-backend/SpazaUniti-Backend/app/main.py), [grants.py](file:///home/azaria/ux-giants/spazakhokha/services/uniti-backend/SpazaUniti-Backend/app/grants.py)

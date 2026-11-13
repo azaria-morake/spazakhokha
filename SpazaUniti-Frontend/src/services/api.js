@@ -3,7 +3,7 @@
  * Connects to SpazaUniti-Backend (Port 8001)
  */
 
-const API_BASE = "http://localhost:8001";
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8001";
 
 export async function fetchNearbyUnits(lat = -26.2234, lng = 27.8681, radiusKm = 5.0, filterType = "all") {
   try {
