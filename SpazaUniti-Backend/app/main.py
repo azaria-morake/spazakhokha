@@ -62,7 +62,8 @@ from .consumers import (
     invite_beneficiary,
     respond_to_invitation,
     allocate_to_beneficiary,
-    remove_beneficiary_link
+    remove_beneficiary_link,
+    debit_consumer_ubu
 )
 from .rbac import (
     login_staff,
@@ -194,6 +195,113 @@ def get_customer(username: str):
 def fund_consumer_ubu(username: str, payload: FundUbuRequest):
     """Single Open Payments / Cash-In inflow -> Uniti-Wide Spendable UBU Pool."""
     return fund_ubu_wallet(username, payload)
+
+@app.post("/api/wallets/{username}/pay-unit-ubu")
+def api_wallet_pay_unit_ubu(username: str, payload: ConsumerPayUnitRequest):
+    """
+    Direct zero-fee UBU payment from customer's Spendable UBU pool (or Family allowance)
+    to a Spaza Uniti node. Debits customers.ubu_balance, credits units.ubu_balance,
+    records to ubuone_ledger and transactions.
+    """
+    clean = username.strip().lower().lstrip("@")
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM customers WHERE username = ?", (clean,))
+    cust = cursor.fetchone()
+    if not cust:
+        conn.close()
+        raise HTTPException(status_code=404, detail=f"Customer @{clean} not found")
+
+    unit_target = payload.unit_id.strip()
+    cursor.execute("SELECT * FROM units WHERE id = ?", (unit_target,))
+    unit = cursor.fetchone()
+    if not unit:
+        conn.close()
+        raise HTTPException(status_code=404, detail=f"Spaza Unit '{payload.unit_id}' not found")
+
+    source_bucket, debited_vault, debit_meta = debit_consumer_ubu(
+        cursor=cursor,
+        cust_row=cust,
+        amount_ubu=payload.amount_ubu,
+        source_mode=payload.source_mode,
+        sponsor_username=payload.sponsor_username,
+    )
+
+    new_unit_ubu = round(float(unit["ubu_balance"] or 0.0) + payload.amount_ubu, 2)
+    cursor.execute("UPDATE units SET ubu_balance = ? WHERE id = ?", (new_unit_ubu, unit["id"]))
+
+    reward_earned = round(min(payload.amount_ubu * 0.1, 2.0), 2)
+    now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    if reward_earned > 0:
+        cursor.execute(
+            "SELECT * FROM customer_tokens WHERE username = ? AND unit_id = ?",
+            (clean, unit["id"]),
+        )
+        tok = cursor.fetchone()
+        if tok:
+            cursor.execute(
+                "UPDATE customer_tokens SET ubu_balance = ?, updated_at = ? WHERE username = ? AND unit_id = ?",
+                (round(float(tok["ubu_balance"]) + reward_earned, 2), now_str, clean, unit["id"]),
+            )
+        else:
+            cursor.execute(
+                "INSERT INTO customer_tokens (id, username, unit_id, ubu_balance, updated_at) VALUES (?, ?, ?, ?, ?)",
+                (f"tok_{uuid.uuid4().hex[:10]}", clean, unit["id"], reward_earned, now_str),
+            )
+
+    ledger_id = f"u1l_{uuid.uuid4().hex[:10]}"
+    desc = f"{payload.items_description.strip()} ({unit['name']})"
+    cursor.execute(
+        """
+        INSERT INTO ubuone_ledger (
+            id, event_type, unit_id, staff_username, from_username, to_username,
+            amount_ubu, fee_zar, description, source_bucket, created_at
+        )
+        VALUES (?, 'COUNTER_SALE', ?, 'spaza_uniti_online', ?, ?, ?, 0.0, ?, ?, ?);
+        """,
+        (ledger_id, unit["id"], clean, unit["id"], round(payload.amount_ubu, 2), desc, source_bucket, now_str),
+    )
+
+    ilp_ref = f"ilp.ubuone.online.{uuid.uuid4().hex[:10]}"
+    cursor.execute(
+        """
+        INSERT INTO transactions (id, customer_id, username, type, counterparty, amount, purpose, status, ilp_packet_ref, created_at)
+        VALUES (?, ?, ?, 'OUTGOING', ?, ?, ?, 'COMPLETED', ?, ?);
+        """,
+        (
+            f"tx_{uuid.uuid4().hex[:10]}",
+            cust["id"],
+            clean,
+            unit["name"],
+            round(payload.amount_ubu, 2),
+            f"{payload.items_description.strip()} (via {source_bucket})",
+            ilp_ref,
+            now_str,
+        ),
+    )
+
+    conn.commit()
+
+    # Read back updated customer balances
+    cursor.execute("SELECT ubu_balance, balance FROM customers WHERE username = ?", (clean,))
+    cust_updated = cursor.fetchone()
+    conn.close()
+
+    return {
+        "success": True,
+        "ledger_id": ledger_id,
+        "unit_id": unit["id"],
+        "unit_name": unit["name"],
+        "amount_ubu": round(payload.amount_ubu, 2),
+        "fee_zar": 0.0,
+        "source_bucket": source_bucket,
+        "debited_vault": debited_vault,
+        "new_customer_ubu_balance": cust_updated["ubu_balance"] if cust_updated else 0.0,
+        "new_customer_zar_balance": cust_updated["balance"] if cust_updated else 0.0,
+        "new_unit_balance": new_unit_ubu,
+        "reward_earned": reward_earned,
+        "receipt_message": f"Paid {payload.amount_ubu:.2f} UBU cleanly to {unit['name']}! Zero transaction fee applied."
+    }
 
 # -----------------------------------------------------------------------------
 # 2. FAMILY Vault Members & INDIVIDUAL Beneficiary Invitations/Allocations
