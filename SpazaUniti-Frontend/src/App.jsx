@@ -11,6 +11,7 @@ import UnitStorefrontModal from './components/UnitStorefrontModal';
 import CustomerModal from './components/CustomerModal';
 import NotificationsModal from './components/NotificationsModal';
 import UbuReceiptModal from './components/UbuReceiptModal';
+import LiveOpenPaymentsModal from './components/LiveOpenPaymentsModal';
 
 import { 
   INITIAL_SHOPS, 
@@ -50,6 +51,7 @@ export default function App() {
   const [applyTokens, setApplyTokens] = useState(false);
   const [ubuReceiptModal, setUbuReceiptModal] = useState(null);
   const [isPayingUbu, setIsPayingUbu] = useState(false);
+  const [isLiveTestnetOpen, setIsLiveTestnetOpen] = useState(false);
 
   const mergeCustomerPayload = (prev, data) => ({
     ...prev,
@@ -322,6 +324,7 @@ export default function App() {
           currentCustomer={currentCustomer}
           onOpenCustomerModal={() => setIsCustomerModalOpen(true)}
           onOpenNotifications={() => setIsNotificationsOpen(true)}
+          onOpenLiveTestnet={() => setIsLiveTestnetOpen(true)}
         />
 
         <div className="px-6 md:px-8 max-w-6xl w-full mx-auto">
@@ -371,6 +374,7 @@ export default function App() {
           setSelectedShop(shops[0]);
           setIsStorefrontOpen(true);
         }}
+        onOpenLiveTestnet={() => setIsLiveTestnetOpen(true)}
       />
 
       {/* 4. Responsive Mobile Navigation Bar */}
@@ -418,6 +422,18 @@ export default function App() {
         isOpen={Boolean(ubuReceiptModal)}
         onClose={() => setUbuReceiptModal(null)}
         receipt={ubuReceiptModal}
+      />
+
+      <LiveOpenPaymentsModal
+        isOpen={isLiveTestnetOpen}
+        onClose={() => setIsLiveTestnetOpen(false)}
+        currentCustomer={currentCustomer}
+        onRefreshCustomer={async () => {
+          const updated = await fetchCustomer(currentCustomer.username);
+          if (updated) {
+            setCurrentCustomer(prev => mergeCustomerPayload(prev, updated));
+          }
+        }}
       />
     </div>
   );

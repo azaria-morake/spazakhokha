@@ -9,7 +9,8 @@ export default function Header({
   onSearchChange,
   currentCustomer,
   onOpenCustomerModal,
-  onOpenNotifications
+  onOpenNotifications,
+  onOpenLiveTestnet
 }) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
@@ -76,8 +77,18 @@ export default function Header({
         </div>
       </div>
 
-      {/* Right Action Icons: Bell + User Avatar */}
-      <div className="flex items-center gap-3">
+      {/* Right Action Icons: Live Testnet + Bell + User Avatar */}
+      <div className="flex items-center gap-2.5">
+        {/* Live Open Payments Testnet Pill */}
+        <button
+          onClick={onOpenLiveTestnet}
+          className="hidden sm:flex items-center gap-2 bg-[#0e192c] hover:bg-[#152542] border border-cyan-500/35 text-cyan-300 px-3 py-1.5 rounded-full text-xs font-bold transition-all shadow-sm cursor-pointer hover:border-cyan-400 group"
+          title="Open Live Interledger Testnet Console ($ilp.interledger-test.dev/2f0b6b2c)"
+        >
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+          <span className="font-mono text-[11px] group-hover:text-white">$ilp.testnet</span>
+        </button>
+
         {/* Notification Bell */}
         <button
           onClick={onOpenNotifications}

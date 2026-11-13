@@ -259,4 +259,73 @@ export async function payUnitWithUbu(username, payload) {
   return await res.json();
 }
 
+// -----------------------------------------------------------------------------
+// Live Open Payments Testnet Client (wallet.interledger-test.dev)
+// -----------------------------------------------------------------------------
+export async function fetchLiveOpStatus() {
+  try {
+    const res = await fetch(`${API_BASE}/api/open-payments/live/status`);
+    if (!res.ok) throw new Error("Could not fetch testnet status");
+    return await res.json();
+  } catch (err) {
+    return { connected: false, error: err.message };
+  }
+}
+
+export async function createLiveIncomingPayment(amountCents, description = "Spaza Uniti Live Testnet Payment") {
+  const res = await fetch(`${API_BASE}/api/open-payments/live/incoming-payment`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ amount_cents: amountCents, description })
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.detail || "Incoming payment creation failed");
+  }
+  return await res.json();
+}
+
+export async function initiateLiveTopUp(username, amountCents, redirectUri = null) {
+  const clean = username.replace(/^@/, "");
+  const res = await fetch(`${API_BASE}/api/open-payments/live/topup/initiate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username: clean, amount_cents: amountCents, redirect_uri: redirectUri })
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.detail || "Live top-up initiation failed");
+  }
+  return await res.json();
+}
+
+export async function completeLiveTopUp(username, amountCents) {
+  const clean = username.replace(/^@/, "");
+  const res = await fetch(`${API_BASE}/api/open-payments/live/topup/complete`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username: clean, amount_cents: amountCents })
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.detail || "Top-up completion failed");
+  }
+  return await res.json();
+}
+
+export async function cashoutLiveTestnet(username, amountZar = 20.0, purpose = "Taxi Fare Cashout", unitId = "unit-104") {
+  const clean = username.replace(/^@/, "");
+  const res = await fetch(`${API_BASE}/api/open-payments/live/cashout`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username: clean, amount_zar: amountZar, purpose, unit_id: unitId })
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.detail || "Live cashout failed");
+  }
+  return await res.json();
+}
+
+
 

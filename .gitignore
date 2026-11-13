@@ -41,4 +41,4 @@ __pycache__/
 Thumbs.db
 
 # Microservices worktrees
-services/
+/services/

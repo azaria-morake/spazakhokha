@@ -28,7 +28,8 @@ export default function CartSidebar({
   userUbuTokens = 24.0,
   applyTokens = false,
   onToggleApplyTokens,
-  onOpenRewards
+  onOpenRewards,
+  onOpenLiveTestnet
 }) {
   const totalCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -159,8 +160,19 @@ export default function CartSidebar({
                 <CreditCard className="w-3 h-3" />
               </div>
               <div>
-                <span className="text-[11px] font-medium text-slate-400 block leading-tight">Bank / OP Reserve</span>
-                <span className="text-[9px] text-slate-500">Fiat buffer</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[11px] font-medium text-slate-300 block leading-tight">Bank / OP Reserve</span>
+                  {onOpenLiveTestnet && (
+                    <button
+                      onClick={onOpenLiveTestnet}
+                      className="text-[9px] text-cyan-400 hover:text-cyan-300 font-mono underline"
+                      title="View Live Testnet Connection"
+                    >
+                      $ilp.testnet
+                    </button>
+                  )}
+                </div>
+                <span className="text-[9px] text-slate-500">Interledger Testnet Linked</span>
               </div>
             </div>
             <span className="text-xs font-bold text-slate-300 tabular-nums">
@@ -259,8 +271,8 @@ export default function CartSidebar({
           <CreditCard className="w-3.5 h-3.5 text-emerald-400" />
           <span>
             {!hasEnoughFiat
-              ? `Bank/OP Short (R${fiatReserve.toFixed(2)} left)`
-              : `Pay R${netPayable.toFixed(2)} with Bank/OP Reserve`}
+              ? `Bank/OP Reserve Short (R${fiatReserve.toFixed(2)} left)`
+              : `Pay R${netPayable.toFixed(2)} with Open Payments`}
           </span>
         </button>
 

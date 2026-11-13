@@ -127,6 +127,10 @@ export default function OpenPaymentsModal({
                   <span className="text-slate-400">Authorization Method:</span>
                   <span className="text-emerald-400 font-semibold">{receipt.method}</span>
                 </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Interledger Network:</span>
+                  <span className="font-mono text-cyan-300 text-[11px]">$ilp.interledger-test.dev</span>
+                </div>
                 <div className="flex justify-between pt-2 border-t border-[#232f44]">
                   <span className="text-slate-400">New Wallet Balance:</span>
                   <span className="font-black text-white text-sm">
