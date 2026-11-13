@@ -111,6 +111,23 @@ def approve_grant(grant_id: str, consent_method: str = "INTERACTIVE_LINK") -> Di
     VALUES (?, ?, ?, 'OUTGOING', ?, ?, ?, 'COMPLETED', ?, ?);
     """, (tx_id, cust["id"], cust["username"], grant["merchant_name"], grant["amount"], grant["purpose"], ilp_ref, now_str))
 
+    # Mirror into UbuOne unified ledger so Unit & Consumer dashboards reflect Spaza Uniti purchases immediately
+    merchant_unit_id = grant["merchant_id"] if grant["merchant_id"] else "unit-104"
+    ledger_id = f"u1l_{uuid.uuid4().hex[:10]}"
+    desc = f"Spaza Uniti Checkout: {grant['purpose']}"
+    cursor.execute("""
+    INSERT INTO ubuone_ledger (
+        id, event_type, unit_id, staff_username, from_username, to_username,
+        amount_ubu, fee_zar, description, source_bucket, created_at
+    )
+    VALUES (?, 'COUNTER_SALE', ?, 'spaza_uniti_online', ?, ?, ?, 0.0, ?, 'OPEN_PAYMENTS_ZAR', ?);
+    """, (ledger_id, merchant_unit_id, cust["username"], merchant_unit_id, grant["amount"], desc, now_str))
+
+    cursor.execute(
+        "UPDATE units SET ubu_balance = round(COALESCE(ubu_balance, 0.0) + ?, 2) WHERE id = ?",
+        (grant["amount"], merchant_unit_id)
+    )
+
     conn.commit()
     conn.close()
 

@@ -412,3 +412,4 @@ def pay_unit_from_consumer(username: str, actor: Dict[str, Any], payload: Consum
         "new_unit_balance": new_unit_ubu,
         "message": f"Paid {payload.amount_ubu:.2f} UBU to {unit['name']} from {source_bucket} at R0.00 fee!",
     }
+
