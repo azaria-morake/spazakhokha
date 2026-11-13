@@ -91,7 +91,7 @@ export const TOWNSHIPS = [
 ];
 
 export const DEMO_CUSTOMERS = [
-  { username: "mannini", name: "Mannini Morake", avatar: "M", account_type: "INDIVIDUAL", balance: 250.00, ubu_balance: 140.00, points: 245, stamps: 6 },
+  { username: "mannini", name: "Mannini Morake", avatar: "M", account_type: "INDIVIDUAL", balance: 27.99, ubu_balance: 60.00, points: 245, stamps: 6 },
   { username: "morake_ext_5", name: "Morake Household Vault", avatar: "F", account_type: "FAMILY", balance: 600.00, ubu_balance: 500.00, points: 400, stamps: 9 },
   { username: "lethabomorake", name: "Lethabo Morake (Child)", avatar: "L", account_type: "INDIVIDUAL", balance: 0.00, ubu_balance: 0.00, points: 20, stamps: 1 },
   { username: "azaria", name: "Azaria Morake", avatar: "A", account_type: "INDIVIDUAL", balance: 320.00, ubu_balance: 350.00, points: 310, stamps: 2 },

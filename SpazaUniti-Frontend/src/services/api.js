@@ -245,3 +245,18 @@ export async function removeBeneficiaryLink(username, linkId) {
   return await res.json();
 }
 
+export async function payUnitWithUbu(username, payload) {
+  const clean = username.replace(/^@/, "");
+  const res = await fetch(`${API_BASE}/api/wallets/${clean}/pay-unit-ubu`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.detail || "UBU payment failed");
+  }
+  return await res.json();
+}
+
+

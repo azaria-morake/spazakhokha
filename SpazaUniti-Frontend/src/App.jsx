@@ -10,6 +10,7 @@ import OpenPaymentsModal from './components/OpenPaymentsModal';
 import UnitStorefrontModal from './components/UnitStorefrontModal';
 import CustomerModal from './components/CustomerModal';
 import NotificationsModal from './components/NotificationsModal';
+import UbuReceiptModal from './components/UbuReceiptModal';
 
 import { 
   INITIAL_SHOPS, 
@@ -20,7 +21,8 @@ import {
 import { 
   fetchNearbyUnits, 
   fetchCustomer, 
-  createOutgoingPaymentGrant 
+  createOutgoingPaymentGrant,
+  payUnitWithUbu
 } from './services/api';
 
 export default function App() {
@@ -46,6 +48,8 @@ export default function App() {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [pendingGrant, setPendingGrant] = useState(null);
   const [applyTokens, setApplyTokens] = useState(false);
+  const [ubuReceiptModal, setUbuReceiptModal] = useState(null);
+  const [isPayingUbu, setIsPayingUbu] = useState(false);
 
   const mergeCustomerPayload = (prev, data) => ({
     ...prev,
@@ -155,7 +159,76 @@ export default function App() {
     setIsStorefrontOpen(false);
   };
 
-  // Open Payments Checkout initiation
+  // UBU Core Payment (Instant, Zero Fee)
+  const handlePayWithUbu = async () => {
+    const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    if (subtotal <= 0) return;
+
+    const recipientStore = selectedShop || shops[0];
+    const storeId = recipientStore.unit_id || "unit-104";
+    const storeName = recipientStore.name;
+
+    const availableTokens = currentCustomer.ubuntu_tokens?.[storeId] ?? 0;
+    const tokensDiscount = applyTokens ? Math.min(subtotal, availableTokens >= 16.0 ? 16.0 : availableTokens) : 0;
+    const finalAmount = Math.max(0.01, subtotal - tokensDiscount);
+
+    if ((currentCustomer.ubu_balance || 0) < finalAmount) {
+      alert(`Insufficient Spendable UBU (${(currentCustomer.ubu_balance || 0).toFixed(2)} UBU available for R${finalAmount.toFixed(2)} cart). Please top up or pay via Bank/OP Reserve.`);
+      return;
+    }
+
+    setIsPayingUbu(true);
+    try {
+      const itemsList = cartItems.map(c => `${c.quantity}x ${c.name}`).join(', ');
+      const result = await payUnitWithUbu(currentCustomer.username, {
+        unit_id: storeId,
+        amount_ubu: finalAmount,
+        items_description: `Cart Checkout: ${itemsList}${tokensDiscount > 0 ? ` (Applied ${tokensDiscount.toFixed(2)} cashback discount)` : ''}`,
+        source_mode: "AUTO"
+      });
+
+      setCurrentCustomer(prev => {
+        const prevTokens = prev.ubuntu_tokens || {};
+        const currentStoreTok = prevTokens[storeId] ?? 0;
+        const updatedStoreTok = Math.max(0, currentStoreTok - tokensDiscount + (result.reward_earned || 1.78));
+        return {
+          ...prev,
+          ubu_balance: result.new_customer_ubu_balance,
+          balance: result.new_customer_zar_balance ?? prev.balance,
+          points: (prev.points || 0) + 5,
+          stamps: ((prev.stamps || 0) + 1) % 10,
+          ubuntu_tokens: {
+            ...prevTokens,
+            [storeId]: updatedStoreTok
+          }
+        };
+      });
+
+      setCartItems([]);
+      setApplyTokens(false);
+      setUbuReceiptModal({
+        unitName: storeName,
+        amountUbu: finalAmount,
+        fee: 0.0,
+        rewardEarned: result.reward_earned || 1.78,
+        sourceBucket: result.source_bucket || "PERSONAL_UBU",
+        ledgerId: result.ledger_id,
+        newUbuBalance: result.new_customer_ubu_balance,
+        newZarBalance: result.new_customer_zar_balance ?? currentCustomer.balance
+      });
+
+      const fresh = await fetchCustomer(currentCustomer.username);
+      if (fresh) {
+        setCurrentCustomer(prev => mergeCustomerPayload(prev, fresh));
+      }
+    } catch (err) {
+      alert("UBU Payment failed: " + err.message);
+    } finally {
+      setIsPayingUbu(false);
+    }
+  };
+
+  // Open Payments Checkout initiation (Bank/OP Reserve)
   const handleInitiateCheckout = async () => {
     const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
     if (subtotal <= 0) return;
@@ -280,12 +353,15 @@ export default function App() {
         </div>
       </main>
 
-      {/* 3. Right Cart Sidebar ("Your Cart", OpenPayments Button, Purple Rewards Card) */}
+      {/* 3. Right Cart Sidebar ("Your Cart", UbuOne Pay Button, OpenPayments Button, Rewards Card) */}
       <CartSidebar
         cartItems={cartItems}
         onUpdateQuantity={handleUpdateQuantity}
         onRemoveItem={handleRemoveItem}
+        onPayWithUbu={handlePayWithUbu}
         onInitiateCheckout={handleInitiateCheckout}
+        isPayingUbu={isPayingUbu}
+        currentCustomer={currentCustomer}
         pointsEarned={5}
         currentPoints={currentCustomer.points || 245}
         userUbuTokens={currentCustomer.ubuntu_tokens?.[selectedShop?.unit_id || "unit-104"] ?? 24.0}
@@ -336,6 +412,12 @@ export default function App() {
       <NotificationsModal
         isOpen={isNotificationsOpen}
         onClose={() => setIsNotificationsOpen(false)}
+      />
+
+      <UbuReceiptModal
+        isOpen={Boolean(ubuReceiptModal)}
+        onClose={() => setUbuReceiptModal(null)}
+        receipt={ubuReceiptModal}
       />
     </div>
   );

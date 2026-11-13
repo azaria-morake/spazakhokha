@@ -6,17 +6,23 @@ import {
   Trash2, 
   CreditCard, 
   Star, 
-  ArrowRight,
-  Coins,
-  Bus,
-  Check
+  ArrowRight, 
+  Coins, 
+  Bus, 
+  Check,
+  ShieldCheck,
+  Sparkles,
+  Wallet
 } from 'lucide-react';
 
 export default function CartSidebar({
   cartItems,
   onUpdateQuantity,
   onRemoveItem,
+  onPayWithUbu,
   onInitiateCheckout,
+  isPayingUbu = false,
+  currentCustomer,
   pointsEarned = 5,
   currentPoints = 245,
   userUbuTokens = 24.0,
@@ -29,6 +35,11 @@ export default function CartSidebar({
 
   const tokenDiscount = applyTokens ? Math.min(subtotal, userUbuTokens >= 16.0 ? 16.0 : userUbuTokens) : 0;
   const netPayable = Math.max(0, subtotal - tokenDiscount);
+
+  const spendableUbu = Number(currentCustomer?.ubu_balance || 0);
+  const fiatReserve = Number(currentCustomer?.balance || 0);
+  const hasEnoughUbu = spendableUbu >= netPayable;
+  const hasEnoughFiat = fiatReserve >= netPayable;
 
   return (
     <aside className="w-80 bg-[#0d1117] border-l border-[#1e2638] flex flex-col justify-between p-5 min-h-screen shrink-0 select-none">
@@ -88,7 +99,7 @@ export default function CartSidebar({
                     <div className="flex items-center bg-[#1b2332] rounded-lg border border-[#28354c] px-1 py-0.5">
                       <button
                         onClick={() => onUpdateQuantity(item.id, item.quantity - 1)}
-                        className="w-5 h-5 flex items-center justify-center text-slate-400 hover:text-white"
+                        className="w-5 h-5 flex items-center justify-center text-slate-400 hover:text-white cursor-pointer"
                         title="Decrease"
                       >
                         <Minus className="w-3 h-3" />
@@ -98,7 +109,7 @@ export default function CartSidebar({
                       </span>
                       <button
                         onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
-                        className="w-5 h-5 flex items-center justify-center text-slate-400 hover:text-white"
+                        className="w-5 h-5 flex items-center justify-center text-slate-400 hover:text-white cursor-pointer"
                         title="Increase"
                       >
                         <Plus className="w-3 h-3" />
@@ -107,7 +118,7 @@ export default function CartSidebar({
 
                     <button
                       onClick={() => onRemoveItem(item.id)}
-                      className="text-slate-500 hover:text-red-400 p-1 transition-colors"
+                      className="text-slate-500 hover:text-red-400 p-1 transition-colors cursor-pointer"
                       title="Remove item"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -120,9 +131,45 @@ export default function CartSidebar({
         )}
       </div>
 
-      {/* Cart Footer: Subtotal, Reward Badge, Open Payments Button & Purple Rewards Box */}
+      {/* Cart Footer */}
       <div className="pt-4 border-t border-[#1b2332] space-y-3 mt-auto">
-        {/* Ubuntu Token Discount Toggle */}
+        {/* Customer Live Wallets Box */}
+        <div className="bg-[#141c2a] border border-[#232f46] rounded-2xl p-3 space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <div className="w-5 h-5 rounded-md bg-[#00A2E8]/20 border border-[#00A2E8]/40 flex items-center justify-center text-[#38C3FF]">
+                <Coins className="w-3 h-3" />
+              </div>
+              <div>
+                <span className="text-[11px] font-bold text-slate-200 block leading-tight">My Spendable UBU</span>
+                <span className="text-[9px] text-[#38C3FF] font-medium">Uniti-wide · R0.00 fee</span>
+              </div>
+            </div>
+            <div className="text-right">
+              <span className="text-sm font-black text-white tabular-nums">
+                {spendableUbu.toFixed(2)}{' '}
+                <span className="text-xs font-bold text-[#38C3FF]">UBU</span>
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between pt-1.5 border-t border-white/5">
+            <div className="flex items-center gap-1.5">
+              <div className="w-5 h-5 rounded-md bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                <CreditCard className="w-3 h-3" />
+              </div>
+              <div>
+                <span className="text-[11px] font-medium text-slate-400 block leading-tight">Bank / OP Reserve</span>
+                <span className="text-[9px] text-slate-500">Fiat buffer</span>
+              </div>
+            </div>
+            <span className="text-xs font-bold text-slate-300 tabular-nums">
+              R{fiatReserve.toFixed(2)}
+            </span>
+          </div>
+        </div>
+
+        {/* Loyalty Cashback Discount Toggle */}
         {subtotal > 0 && userUbuTokens > 0 && (
           <div 
             onClick={onToggleApplyTokens}
@@ -133,10 +180,10 @@ export default function CartSidebar({
             }`}
           >
             <div className="flex items-center gap-2">
-              <Coins className={`w-4 h-4 ${applyTokens ? 'text-amber-400' : 'text-slate-500'}`} />
+              <Star className={`w-4 h-4 ${applyTokens ? 'text-amber-400 fill-amber-400' : 'text-slate-500'}`} />
               <div className="text-left">
-                <span className="text-xs font-bold block text-white">Apply Ubuntu Tokens</span>
-                <span className="text-[10px] text-slate-400">Available: {Number(userUbuTokens).toFixed(2)} UBU (1:1 ZAR)</span>
+                <span className="text-xs font-bold block text-white">Apply Loyalty Cashback</span>
+                <span className="text-[10px] text-slate-400">Available: {Number(userUbuTokens).toFixed(2)} UBU discount</span>
               </div>
             </div>
             <div className={`w-5 h-5 rounded-md flex items-center justify-center border transition-all ${
@@ -156,7 +203,7 @@ export default function CartSidebar({
                 <span>R{subtotal.toFixed(2)}</span>
               </div>
               <div className="flex items-center justify-between text-xs text-amber-400 font-bold">
-                <span>Ubuntu Tokens Applied</span>
+                <span>Cashback Applied</span>
                 <span>-R{tokenDiscount.toFixed(2)}</span>
               </div>
             </>
@@ -165,54 +212,80 @@ export default function CartSidebar({
             <span className="text-sm font-semibold text-slate-300">
               {applyTokens && tokenDiscount > 0 ? "Net Payable" : "Subtotal"}
             </span>
-            <span className="text-lg font-black text-white">R{netPayable.toFixed(2)}</span>
+            <span className="text-lg font-black text-white tabular-nums">
+              R{netPayable.toFixed(2)}{' '}
+              <span className="text-xs font-bold text-[#38C3FF]">({netPayable.toFixed(2)} UBU)</span>
+            </span>
           </div>
         </div>
 
         {/* Loyalty Reward Info Box */}
         {subtotal > 0 && (
-          <div className="bg-[#10241b] border border-[#1b3d2d] rounded-xl px-3 py-2 flex items-center gap-2">
+          <div className="bg-[#10241b] border border-[#1b3d2d] rounded-xl px-3 py-1.5 flex items-center gap-2">
             <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400 shrink-0" />
-            <span className="text-xs font-semibold text-emerald-300">
-              Earn +1.78 UBU & {pointsEarned} pts with this purchase!
+            <span className="text-[11px] font-semibold text-emerald-300">
+              Earn +1.78 UBU cashback &amp; {pointsEarned} pts with this purchase!
             </span>
           </div>
         )}
 
-        {/* Primary CTA: Pay with OpenPayments */}
+        {/* PRIMARY CTA: Pay with Spendable UBU (Zero Fee) */}
         <button
-          onClick={onInitiateCheckout}
-          disabled={cartItems.length === 0}
-          className="w-full bg-[#22c55e] hover:bg-[#16a34a] disabled:bg-slate-800 disabled:text-slate-600 disabled:cursor-not-allowed text-slate-950 font-bold py-3.5 px-4 rounded-2xl flex items-center justify-center gap-2.5 shadow-lg shadow-emerald-500/20 transition-all hover:shadow-emerald-500/30 hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+          onClick={onPayWithUbu}
+          disabled={cartItems.length === 0 || isPayingUbu || !hasEnoughUbu}
+          className="w-full bg-[#00A2E8] hover:bg-[#008fcb] disabled:bg-slate-800 disabled:text-slate-500 disabled:cursor-not-allowed text-white font-bold py-3.5 px-4 rounded-2xl flex items-center justify-center gap-2.5 shadow-lg shadow-[#00A2E8]/20 transition-all hover:shadow-[#00A2E8]/35 hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
         >
-          <CreditCard className="w-5 h-5 text-slate-950" />
+          {isPayingUbu ? (
+            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+          ) : (
+            <Coins className="w-5 h-5 text-white" />
+          )}
           <span className="text-sm tracking-wide">
-            {netPayable === 0 ? "Claim with Ubuntu Tokens" : `Pay R${netPayable.toFixed(2)} with OpenPayments`}
+            {isPayingUbu 
+              ? "Processing UBU Payment..." 
+              : !hasEnoughUbu 
+                ? `Insufficient UBU (${spendableUbu.toFixed(2)} UBU available)` 
+                : `Pay ${netPayable.toFixed(2)} UBU (Zero Fee)`}
           </span>
         </button>
 
-        {/* Bottom Purple Promo Box: Your Rewards */}
+        {/* SECONDARY CTA: Pay with Bank/OP Reserve */}
+        <button
+          onClick={onInitiateCheckout}
+          disabled={cartItems.length === 0 || !hasEnoughFiat}
+          className="w-full bg-[#182130] hover:bg-[#202d42] border border-[#26354f] disabled:opacity-50 disabled:cursor-not-allowed text-slate-300 font-semibold py-2.5 px-3 rounded-xl flex items-center justify-center gap-2 text-xs transition-all cursor-pointer"
+          title={!hasEnoughFiat ? `Insufficient Bank/OP Reserve (R${fiatReserve.toFixed(2)} available)` : undefined}
+        >
+          <CreditCard className="w-3.5 h-3.5 text-emerald-400" />
+          <span>
+            {!hasEnoughFiat
+              ? `Bank/OP Short (R${fiatReserve.toFixed(2)} left)`
+              : `Pay R${netPayable.toFixed(2)} with Bank/OP Reserve`}
+          </span>
+        </button>
+
+        {/* Bottom Purple Promo Box: Loyalty Cashback & Taxi Fare Goal */}
         <div 
           onClick={onOpenRewards}
-          className="bg-gradient-to-br from-[#4c1d95] via-[#581c87] to-[#3b0764] border border-[#6b21a8]/40 rounded-2xl p-4 relative overflow-hidden shadow-lg cursor-pointer hover:border-purple-400/50 transition-all group"
+          className="bg-gradient-to-br from-[#4c1d95] via-[#581c87] to-[#3b0764] border border-[#6b21a8]/40 rounded-2xl p-3.5 relative overflow-hidden shadow-lg cursor-pointer hover:border-purple-400/50 transition-all group"
         >
           <div className="relative z-10 pr-20">
-            <div className="flex items-center gap-1.5 text-xs font-bold text-amber-400 mb-1">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-amber-400 mb-0.5">
               <Star className="w-3.5 h-3.5 fill-amber-400" />
-              <span>Your Rewards</span>
+              <span>Unit Loyalty Cashback</span>
               <ArrowRight className="w-3 h-3 ml-1 group-hover:translate-x-1 transition-transform" />
             </div>
-            <div className="text-xl font-black text-white tracking-tight">
+            <div className="text-lg font-black text-white tracking-tight">
               {Number(userUbuTokens).toFixed(1)} UBU
             </div>
             <p className="text-[10px] text-purple-200/90 font-medium mt-0.5 flex items-center gap-1">
               <Bus className="w-3 h-3 text-sky-300" />
-              {userUbuTokens >= 20 ? "R20 Taxi Fare Ready!" : `${(20 - userUbuTokens).toFixed(1)} UBU to Taxi Fare`}
+              {userUbuTokens >= 20 ? "R20 Taxi Fare Ready to Cash Out!" : `${(20 - userUbuTokens).toFixed(1)} UBU to Taxi Fare`}
             </p>
           </div>
 
           {/* 3D Gift Box Floating Illustration */}
-          <div className="absolute -right-2 -bottom-2 w-24 h-24 pointer-events-none group-hover:scale-110 transition-transform duration-300">
+          <div className="absolute -right-2 -bottom-2 w-20 h-20 pointer-events-none group-hover:scale-110 transition-transform duration-300">
             <img
               src="/gift_box.jpg"
               alt="Rewards gift box"
@@ -224,4 +297,3 @@ export default function CartSidebar({
     </aside>
   );
 }
-
