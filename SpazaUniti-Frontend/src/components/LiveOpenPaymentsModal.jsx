@@ -524,3 +524,4 @@ export default function LiveOpenPaymentsModal({ isOpen, onClose, currentCustomer
     </div>
   );
 }
+
