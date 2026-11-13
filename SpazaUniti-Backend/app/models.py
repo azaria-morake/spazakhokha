@@ -404,3 +404,21 @@ class UnitDetailResponse(BaseModel):
     jobs: List[Dict[str, Any]] = []
     ubu_balance: float = 0.0
     updated_at: str
+
+class LiveIncomingPaymentRequest(BaseModel):
+    amount_cents: int = Field(..., gt=0, description="Amount in cents (e.g. 3800 for 38.00)")
+    description: Optional[str] = "Spaza Uniti Live Testnet Payment"
+    wallet_url: Optional[str] = None
+
+class LiveTopUpRequest(BaseModel):
+    amount_cents: int = Field(..., gt=0, description="Amount in cents to top up into UBU pool")
+    username: str = Field(..., description="Target customer username (e.g. mannini)")
+    redirect_uri: Optional[str] = None
+    nonce: Optional[str] = None
+
+class LiveCashoutRequest(BaseModel):
+    username: str = Field(..., description="Customer username")
+    amount_zar: float = Field(20.0, gt=0, description="Amount in ZAR / UBU to cash out")
+    purpose: Optional[str] = "Taxi Fare Cash-Out via Open Payments Testnet"
+    unit_id: Optional[str] = "unit-104"
+

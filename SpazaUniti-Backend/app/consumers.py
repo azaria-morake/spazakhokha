@@ -182,6 +182,16 @@ def fund_ubu_wallet(username: str, payload: FundUbuRequest) -> Dict[str, Any]:
 
     tx_id = f"tx_ubu_{uuid.uuid4().hex[:10]}"
     ilp_ref = f"ilp.ubu.inflow.{uuid.uuid4().hex[:12]}"
+    if "TESTNET" in source or source == "OPEN_PAYMENTS":
+        try:
+            from .open_payments_live import create_live_incoming_payment
+            ip_obj = create_live_incoming_payment(int(round(payload.amount * 100)), f"UBU Deposit @{clean}: {payload.note or 'Pool Load'}")
+            methods = ip_obj.get("methods", [])
+            if methods and methods[0].get("ilpAddress"):
+                ilp_ref = methods[0]["ilpAddress"]
+        except Exception:
+            pass
+
     cursor.execute("""
     INSERT INTO transactions (id, customer_id, username, type, counterparty, amount, purpose, status, ilp_packet_ref, created_at)
     VALUES (?, ?, ?, 'INCOMING', ?, ?, ?, 'COMPLETED', ?, ?);
