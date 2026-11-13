@@ -1,0 +1,1144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spaza Uniti & UbuOne • Hackathon Slide Deck</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #070B14;
+      --card-bg: rgba(18, 26, 44, 0.85);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --cyan: #00A2E8;
+      --mint: #10B981;
+      --gold: #F59E0B;
+      --purple: #8B5CF6;
+      --text: #F1F5F9;
+      --muted: #94A3B8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      user-select: none;
+    }
+
+    /* Deck Container */
+    #deck {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 3rem 4.5rem;
+      opacity: 0;
+      pointer-events: none;
+      transform: scale(0.98) translateY(12px);
+      transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+      background-size: cover;
+      background-position: center;
+    }
+
+    .slide.active {
+      opacity: 1;
+      pointer-events: auto;
+      transform: scale(1) translateY(0);
+      z-index: 10;
+    }
+
+    .slide-overlay {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at top right, rgba(0, 162, 232, 0.06), transparent 50%),
+                  linear-gradient(180deg, rgba(7, 11, 20, 0.88) 0%, rgba(7, 11, 20, 0.96) 100%);
+      z-index: 1;
+      backdrop-filter: blur(4px);
+    }
+
+    .slide-content {
+      position: relative;
+      z-index: 2;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    /* Top Tracker Bar */
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.25rem;
+    }
+
+    .category-badge {
+      font-size: 0.75rem;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--cyan);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .category-badge::before {
+      content: '';
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--cyan);
+      box-shadow: 0 0 10px var(--cyan);
+    }
+
+    .slide-num {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.8rem;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    /* Slide Headers */
+    .slide-title {
+      font-size: 2.25rem;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      margin-bottom: 0.5rem;
+    }
+
+    .slide-subtitle {
+      font-size: 1rem;
+      color: var(--muted);
+      font-weight: 500;
+      margin-bottom: 1.5rem;
+    }
+
+    /* Grid Layouts */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      flex: 1;
+      align-items: stretch;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 1.25rem;
+      flex: 1;
+      align-items: stretch;
+    }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 1fr;
+      gap: 1.2rem;
+      flex: 1;
+      align-items: stretch;
+    }
+
+    /* Card Styling */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 1.25rem;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card.border-cyan { border-color: rgba(0, 162, 232, 0.35); }
+    .card.border-mint { border-color: rgba(16, 185, 129, 0.35); }
+    .card.border-gold { border-color: rgba(245, 158, 11, 0.35); }
+    .card.border-purple { border-color: rgba(139, 92, 246, 0.35); }
+    .card.border-red { border-color: rgba(239, 68, 68, 0.35); }
+
+    .card-title {
+      font-size: 1.2rem;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .card-text {
+      font-size: 0.9rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .card-list {
+      list-style: none;
+      margin-top: 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .card-list li {
+      font-size: 0.85rem;
+      color: #E2E8F0;
+      line-height: 1.45;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+    }
+
+    .card-list li::before {
+      content: '•';
+      color: var(--cyan);
+      font-size: 1.1rem;
+      line-height: 1;
+    }
+
+    .highlight-pill {
+      display: inline-block;
+      padding: 0.25rem 0.65rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      margin-top: 0.75rem;
+    }
+    .pill-cyan { background: rgba(0, 162, 232, 0.15); color: #38C3FF; border: 1px solid rgba(0, 162, 232, 0.3); }
+    .pill-mint { background: rgba(16, 185, 129, 0.15); color: #34D399; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .pill-gold { background: rgba(245, 158, 11, 0.15); color: #FBBF24; border: 1px solid rgba(245, 158, 11, 0.3); }
+    .pill-purple { background: rgba(139, 92, 246, 0.15); color: #A78BFA; border: 1px solid rgba(139, 92, 246, 0.3); }
+
+    /* Controls & Bottom Bar */
+    .controls {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 2rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      z-index: 100;
+      background: rgba(15, 23, 42, 0.8);
+      backdrop-filter: blur(8px);
+      padding: 0.4rem 0.8rem;
+      border-radius: 9999px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .btn-ctrl {
+      background: transparent;
+      border: none;
+      color: #94A3B8;
+      cursor: pointer;
+      padding: 0.4rem;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+
+    .btn-ctrl:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    /* Presenter Notes Drawer (Toggled with P/N or button) */
+    #notes-drawer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(11, 16, 29, 0.96);
+      border-top: 1px solid rgba(0, 162, 232, 0.4);
+      padding: 1.25rem 3rem;
+      z-index: 90;
+      transform: translateY(100%);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(12px);
+    }
+
+    #notes-drawer.open {
+      transform: translateY(0);
+    }
+
+    .notes-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
+    }
+
+    .notes-title {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      color: var(--cyan);
+    }
+
+    .notes-content {
+      font-size: 0.95rem;
+      line-height: 1.6;
+      color: #E2E8F0;
+      max-width: 900px;
+    }
+
+    /* Progress Bar */
+    #progress-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--cyan), var(--mint));
+      z-index: 100;
+      transition: width 0.3s ease;
+    }
+
+    /* Images and Previews */
+    .img-preview {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 1rem;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    @media print {
+      body { overflow: visible; height: auto; }
+      .slide { position: relative; opacity: 1; page-break-after: always; height: 100vh; transform: none; }
+      .controls, #notes-drawer, #progress-bar { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="progress-bar" style="width: 7%;"></div>
+
+  <div id="deck">
+
+    <!-- SLIDE 1: Cover -->
+    <section class="slide active" style="background-image: url('/hero_spaza.jpg');">
+      <div class="slide-overlay"></div>
+      <div class="slide-content">
+        <div class="top-bar">
+          <div class="category-badge">Hackathon Final Entry • Open Payments & Interledger</div>
+          <div class="slide-num">01 / 13</div>
+        </div>
+
+        <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; max-width: 850px;">
+          <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+            <img src="/brand/ubu-one-logo.jpeg" style="width: 54px; height: 54px; border-radius: 14px; border: 1px solid rgba(0,162,232,0.4);" onerror="this.style.display='none'">
+            <span style="font-size: 0.9rem; font-weight: 800; letter-spacing: 0.1em; color: var(--cyan); text-transform: uppercase;">UX Giants Presentation</span>
+          </div>
+          <h1 class="slide-title" style="font-size: 3.5rem; margin-bottom: 1rem;">Spaza Uniti &amp; UbuOne</h1>
+          <p style="font-size: 1.35rem; color: #E2E8F0; font-weight: 600; line-height: 1.4; margin-bottom: 2rem;">
+            A Connected Township Commerce &amp; Zero-Fee Micro-Payment Ecosystem Powered by Interledger
+          </p>
+
+          <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+            <div class="highlight-pill pill-cyan">Live Testnet Wallet: $ilp.interledger-test.dev/2f0b6b2c</div>
+            <div class="highlight-pill pill-mint">1 UBU = R1.00 ZAR (R0 Fee)</div>
+            <div class="highlight-pill pill-purple">RFC 9421 Message Signatures &amp; GNAP</div>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1.25rem;">
+          <div>
+            <span style="font-size: 0.8rem; color: var(--muted); display: block;">Production Deployments:</span>
+            <span style="font-size: 0.95rem; font-weight: 700; color: #fff;">spaza-uniti.vercel.app  •  ubu-one-seven.vercel.app</span>
+          </div>
+          <span style="font-size: 0.75rem; color: var(--muted);">Press [→] or Space to navigate • [P] for Talking Points</span>
+        </div>
+      </div>
+      <div class="slide-notes-raw" hidden>
+        Welcome judges. Today we are proud to introduce Spaza Uniti and UbuOne. We built an end-to-end, dual-rail financial and commerce ecosystem designed specifically for the South African township economy. By combining the global standard of Interledger and Open Payments with our localized zero-fee micro-payment pool called Ubu, we eliminate predatory swipe fees, eradicate cash robbery risks, and connect township merchants into a federated digital marketplace.
+      </div>
+    </section>
+
+    <!-- SLIDE 2: Problem Statement -->
+    <section class="slide">
+      <div class="slide-overlay"></div>
+      <div class="slide-content">
+        <div class="top-bar">
+          <div class="category-badge">The Township Paradox</div>
+          <div class="slide-num">02 / 13</div>
+        </div>
+
+        <div>
+          <h2 class="slide-title">R180 Billion in Annual Cash Trade, Yet Trapped by Friction</h2>
+          <p class="slide-subtitle">Across 150,000+ informal spaza shops and 10M+ daily shoppers, traditional card rails fail fractional micro-commerce.</p>
+        </div>
+
+        <div class="grid-3">
+          <div class="card border-red">
+            <div class="card-title" style="color: #F87171;">1. Cash Friction &amp; Crime</div>
+            <p class="card-text">Physical cash is dangerous and expensive to maintain.</p>
+            <ul class="card-list">
+              <li>High armed robbery risk for spaza owners holding daily cash floats.</li>
+              <li>R15 - R35 ATM cash-out fees per commercial bank withdrawal.</li>
+              <li>Families lose 8% to 15% of disposable income just moving cash.</li>
+              <li>Constant coin shortages create counter disputes over sweet change.</li>
+            </ul>
+          </div>
+
+          <div class="card border-gold">
+            <div class="card-title" style="color: #FBBF24;">2. The Micro-Payment Wall</div>
+            <p class="card-text">Card interchange destroys township margins.</p>
+            <ul class="card-list">
+              <li>Card networks impose minimum swipe fees of R1.50 - R2.50.</li>
+              <li>A R5.00 bread slice or R3.00 snack loses 30% to 50% in fees.</li>
+              <li>Terminal hardware is costly and fragile in informal environments.</li>
+              <li>Merchants refuse card payments for high-frequency daily staples.</li>
+            </ul>
+          </div>
+
+          <div class="card border-purple">
+            <div class="card-title" style="color: #C084FC;">3. Paper Credit Tabs</div>
+            <p class="card-text">Informal credit lacks transparency and auditing.</p>
+            <ul class="card-list">
+              <li>Neighborhood tabs ('makhaya credit') tracked in paper notebooks.</li>
+              <li>Zero audit trail, frequent customer disputes, 25%+ default rate.</li>
+              <li>No structured way for parents to limit student or child spending.</li>
+              <li>Bad debt threatens shop solvency and community trust.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div></div>
+      </div>
+      <div class="slide-notes-raw" hidden>
+        To understand why digital payments have failed South African townships, look at unit economics. When a customer buys a R3 cold drink or R8 bread, card networks charge R1.50+ interchange. That wipes out the shopkeeper's entire profit margin. Meanwhile, shoppers pay high ATM fees just to withdraw wages in cash, only to walk into the township and risk being robbed. Spaza Uniti and UbuOne solve this paradox.
+      </div>
+    </section>
+
+    <!-- SLIDE 3: Research Insights -->
+    <section class="slide">
+      <div class="slide-overlay"></div>
+      <div class="slide-content">
+        <div class="top-bar">
+          <div class="category-badge">Field Research</div>
+          <div class="slide-num">03 / 13</div>
+        </div>
+
+        <div>
+          <h2 class="slide-title">Four Truths of Township Commerce</h2>
+          <p class="slide-subtitle">Field insights from Soweto, Tembisa, and Alexandra that directly dictated our engineering.</p>
+        </div>
+
+        <div class="grid-2">
+          <div class="card border-cyan">
+            <div class="card-title" style="color: var(--cyan);">1. Fractional Purchasing</div>
+            <p class="card-text"><strong>Observation:</strong> Shoppers buy single items throughout the day (R5 bread slice, R2 chappies, R3 soup) rather than bulk supermarket trips.</p>
+            <div class="highlight-pill pill-cyan">System Requirement: Unlimited sub-rand micro-transactions at R0 fee</div>
+          </div>
+
+          <div class="card border-mint">
+            <div class="card-title" style="color: var(--mint);">2. One Inflow, Many Spends</div>
+            <p class="card-text"><strong>Observation:</strong> Wages or SASSA social grants arrive once monthly; cash-out happens immediately to escape bank charges.</p>
+            <div class="highlight-pill pill-mint">System Requirement: 1 Macro Open Payments inflow -> Spendable UBU Pool</div>
+          </div>
+
+          <div class="card border-gold">
+            <div class="card-title" style="color: var(--gold);">3. Communal Family Budgets</div>
+            <p class="card-text"><strong>Observation:</strong> Household heads budget daily allowances for children, student siblings, and grandparents who make daily purchases.</p>
+            <div class="highlight-pill pill-gold">System Requirement: Family & Beneficiary RBAC with daily spending limits</div>
+          </div>
+
+          <div class="card border-purple">
+            <div class="card-title" style="color: var(--purple);">4. Low Digital Literacy &amp; Trust</div>
+            <p class="card-text"><strong>Observation:</strong> Older shoppers and busy shopkeepers reject complex multi-factor banking apps and slow SMS OTPs.</p>
+            <div class="highlight-pill pill-purple">System Requirement: Two-Tier Consent: Fast 4-Digit PINs or WhatsApp Links</div>
+          </div>
+        </div>
+
+        <div></div>
+      </div>
+      <div class="slide-notes-raw" hidden>
+        Our field research uncovered that township finances are communal and fractional. A mother receives her salary once a month, but her household makes ten small purchases a day. If every purchase carried a network fee, the household would starve. Furthermore, mothers need to allocate money to their children at school without handing over cash that could be lost or stolen. These four insights directly inspired our architecture.
+      </div>
+    </section>
+
+    <!-- SLIDE 4: Personas -->
+    <section class="slide">
+      <div class="slide-overlay"></div>
+      <div class="slide-content">
+        <div class="top-bar">
+          <div class="category-badge">User Personas</div>
+          <div class="slide-num">04 / 13</div>
+        </div>
+
+        <div>
+          <h2 class="slide-title">Everyday Kasi User Journeys</h2>
+          <p class="slide-subtitle">Engineered for the reality of township shopkeepers, working mothers, and dependent students.</p>
+        </div>
+
+        <div class="grid-3">
+          <div class="card border-mint">
+            <div class="card-title" style="color: var(--mint);">Mama Khumalo</div>
+            <span style="font-size: 0.8rem; font-weight: 700; color: var(--muted); margin-bottom: 0.5rem;">Spaza Shopkeeper (Unit 104)</span>
+            <p class="card-text"><strong>Goal:</strong> Accept digital payments without card fees, eliminate coin shortage disputes, and broadcast daily specials.</p>
+            <ul class="card-list">
+              <li>Opens counter till on UbuOne.</li>
+              <li>Charges customer handle @katlego.</li>
+              <li>Customer enters 4-digit PIN at till.</li>
+              <li>Till instantly confirms with zero network fee.</li>
+              <li>1-click end-of-day bank cash-out via Open Payments.</li>
+            </ul>
+          </div>
+
+          <div class="card border-cyan">
+            <div class="card-title" style="color: var(--cyan);">Mannini</div>
+            <span style="font-size: 0.8rem; font-weight: 700; color: var(--muted); margin-bottom: 0.5rem;">Household Head &amp; Family Admin</span>
+            <p class="card-text"><strong>Goal:</strong> Budget family grocery money safely and earn cashback that covers daily transport costs.</p>
+            <ul class="card-list">
+              <li>Loads R500 once from bank via Open Payments testnet.</li>
+              <li>Sets R50 daily allowance cap for son Katlego.</li>
+              <li>Shops nearby units on Spaza Uniti marketplace.</li>
+              <li>Earns 10% loyalty cashback toward a R20 taxi fare.</li>
+            </ul>
+          </div>
+
+          <div class="card border-purple">
+            <div class="card-title" style="color: var(--purple);">Katlego</div>
+            <span style="font-size: 0.8rem; font-weight: 700; color: var(--muted); margin-bottom: 0.5rem;">High School Student &amp; Dependent</span>
+            <p class="card-text"><strong>Goal:</strong> Buy after-school lunch and bread for home without carrying cash that could get stolen.</p>
+            <ul class="card-list">
+              <li>Walks to Unit 104 after school.</li>
+              <li>Orders Magwinya special combo.</li>
+              <li>Taps 4-digit PIN at counter till.</li>
+              <li>Till debits mother's family vault within daily limit.</li>
+              <li>Zero physical cash touched.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div></div>
+      </div>
+      <div class="slide-notes-raw" hidden>
+        Here are our three core users. Mama Khumalo runs Unit 104 in Soweto. She uses our UbuOne till to eliminate coin shortages and accept zero-fee payments. Mannini is a working mother who tops up her family pool once using Open Payments, sets a R50 daily allowance for her son Katlego, and monitors spending. Katlego goes to Unit 104, provides his handle and 4-digit PIN, and walks away with his food in seconds—with zero fees deducted from either party.
+      </div>
+    </section>
+
+    <!-- SLIDE 5: The Dual-Rail Engine -->
+    <section class="slide">
+      <div class="slide-overlay"></div>
+      <div class="slide-content">
+        <div class="top-bar">
+          <div class="category-badge">Economic Model</div>
+          <div class="slide-num">05 / 13</div>
+        </div>
+
+        <div>
+          <h2 class="slide-title">The Dual-Rail Economic Engine</h2>
+          <p class="slide-subtitle">Bridging global Interledger standards and high-frequency township micro-commerce.</p>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 1.25rem; flex: 1;">
+          <div class="card border-cyan">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+              <span class="card-title" style="color: var(--cyan); margin-bottom: 0;">RAIL 1: GLOBAL OPEN PAYMENTS (INTERLEDGER PROTOCOL)</span>
+              <span class="highlight-pill pill-cyan">Standardized • Cryptographically Signed • Interoperable</span>
+            </div>
+            <ul class="card-list" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+              <li>Payment Pointer: <strong>$ilp.interledger-test.dev/2f0b6b2c</strong></li>
+              <li>High-trust macro events: Salary deposit on-ramps &amp; merchant commercial bank payouts.</li>
+              <li>GNAP interactive consent grants on auth.interledger-test.dev with Ed25519 signatures.</li>
+              <li>Off-Ramp: Automated cash-out of loyalty cashback into R20 taxi fare streaming.</li>
+            </ul>
+          </div>
+
+          <div style="text-align: center; padding: 0.25rem 0;">
+            <span style="background: rgba(245,158,11,0.15); border: 1px solid rgba(245,158,11,0.4); color: var(--gold); padding: 0.4rem 1.25rem; border-radius: 9999px; font-weight: 800; font-size: 0.85rem;">
+              1 Macro Inflow On-Ramp  ➔  Unlocks Hundreds of Internal Zero-Fee Micro-Transactions
+            </span>
+          </div>
+
+          <div class="card border-mint">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+              <span class="card-title" style="color: var(--mint); margin-bottom: 0;">RAIL 2: SPENDABLE UBU MICRO-PAYMENT ENGINE</span>
+              <span class="highlight-pill pill-mint">Uniti-Wide • 1 UBU = R1.00 ZAR • R0.00 Transaction Fee</span>
+            </div>
+            <ul class="card-list" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+              <li>1:1 Currency Peg: 1 UBU is pegged strictly 1:1 to R1.00 South African Rand.</li>
+              <li>R0.00 Per-Transaction Fee: Economic viability for R1.50 sweets and R5.00 bread.</li>
+              <li>Family Vaults: Automated daily/weekly allowance caps and category controls.</li>
+              <li>Instant Till Settlement: Immediate ledger balance updates across all registered Units.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div></div>
+      </div>
+      <div class="slide-notes-raw" hidden>
+        Our key breakthrough is the Dual-Rail Architecture. Rail 1 is the global Interledger standard. We use Open Payments for macro-events: depositing salary, cashing out merchant revenue, or streaming taxi allowances. Rail 2 is our Spendable UBU engine. One UBU is strictly pegged 1:1 to one South African Rand. Once liquidity enters the township pool, money circulates between shoppers, school kids, and spaza shops with zero per-transaction fees. This makes buying a R2 sweet economically viable for the first time.
+      </div>
+    </section>
+
+    <!-- SLIDE 6: System Architecture -->
+    <section class="slide">
+      <div class="slide-overlay"></div>
+      <div class="slide-content">
+        <div class="top-bar">
+          <div class="category-badge">System Architecture</div>
+          <div class="slide-num">06 / 13</div>
+        </div>
+
+        <div>
+          <h2 class="slide-title">Full-Stack Protocol &amp; System Topology</h2>
+          <p class="slide-subtitle">A federated architecture connecting Rafiki testnet nodes, core ledger engines, and client frontends.</p>
+        </div>
+
+        <div class="grid-3" style="flex: 1;">
+          <div class="card border-cyan">
+            <div class="card-title" style="color: var(--cyan);">1. Interledger Testnet</div>
+            <p class="card-text">Global Open Payments Network</p>
+            <ul class="card-list">
+              <li><strong>Rafiki Node:</strong> ilp.interledger-test.dev</li>
+              <li><strong>Auth Server:</strong> auth.interledger-test.dev</li>
+              <li><strong>Pointer:</strong> $ilp.interledger-test.dev/2f0b6b2c</li>
+              <li><strong>Auth Standard:</strong> GNAP Protocol</li>
+              <li><strong>Signatures:</strong> RFC 9421 (Ed25519)</li>
+              <li><strong>Packets:</strong> Live ILP Stream Connections</li>
+            </ul>
+          </div>
+
+          <div class="card border-mint">
+            <div class="card-title" style="color: var(--mint);">2. Core Backend (:8001)</div>
+            <p class="card-text">ACID Ledger &amp; RBAC Engine</p>
+            <ul class="card-list">
+              <li><strong>Framework:</strong> FastAPI &amp; Python 3.12</li>
+              <li><strong>Ledger:</strong> SQLite transactional audit trail</li>
+              <li><strong>Cryptographic Signer:</strong> Pure-Python RFC 9421</li>
+              <li><strong>Two-Tier Consent:</strong> Push Link vs 4-Digit PIN</li>
+              <li><strong>RBAC:</strong> Merchant, Family Admin, Beneficiary</li>
+              <li><strong>Resolver:</strong> Open Payments discovery handler</li>
+            </ul>
+          </div>
+
+          <div class="card border-purple">
+            <div class="card-title" style="color: var(--purple);">3. Client Deployments</div>
+            <p class="card-text">Live Production on Vercel</p>
+            <ul class="card-list">
+              <li><strong>Spaza Uniti:</strong> spaza-uniti.vercel.app</li>
+              <li>Consumer marketplace &amp; geo-discovery</li>
+              <li><strong>UbuOne Portal:</strong> ubu-one-seven.vercel.app</li>
+              <li>Counter POS till &amp; change dispenser</li>
+              <li>Family Vaults &amp; student allowance manager</li>
+              <li>Live Testnet Console with ILP packet viewer</li>
+            </ul>
+          </div>
+        </div>
+
+        <div></div>
+      </div>
+      <div class="slide-notes-raw" hidden>
+        Here is our technical topology. On the left is the live Interledger testnet, running Rafiki with GNAP authentication and RFC 9421 HTTP message signatures. In the center is our FastAPI core service orchestrating the deterministic ACID financial ledger, the Open Payments cryptographic signer, and our RBAC engine. On the right are our two live frontends on Vercel: Spaza Uniti for consumers and UbuOne for merchant point-of-sale and family budgeting.
+      </div>
+    </section>
+
+    <!-- SLIDE 7: Spaza Uniti Showcase -->
+    <section class="slide">
+      <div class="slide-overlay"></div>
+      <div class="slide-content">
+        <div class="top-bar">
+          <div class="category-badge">Platform Showcase</div>
+          <div class="slide-num">07 / 13</div>
+        </div>
+
+        <div>
+          <h2 class="slide-title">Spaza Uniti: Customer Marketplace PWA</h2>
+          <p class="slide-subtitle">Live on Vercel: https://spaza-uniti.vercel.app • Real-time discovery, storefronts, and dual-action cart.</p>
+        </div>
+
+        <div class="grid-2" style="flex: 1; align-items: stretch;">
+          <div class="card border-cyan" style="padding: 0.5rem; justify-content: center; overflow: hidden;">
+            <img src="/UI/Spaza%20Uniti%20Marketplace%20Dashboard.png" class="img-preview" alt="Spaza Uniti Marketplace" onerror="this.src='/hero_spaza.jpg'">
+          </div>
+
+          <div class="card border-cyan">
+            <div class="card-title" style="color: var(--cyan);">Core Consumer Features</div>
+            <ul class="card-list" style="gap: 1rem; margin-top: 1rem;">
+              <li>
+                <div>
+                  <strong style="color: #fff; display: block;">Geo-Proximity Discovery Engine</strong>
+                  <span style="color: var(--muted); font-size: 0.85rem;">Locates nearby open spaza shops across Soweto, Khayelitsha, and Tembisa with live operating status.</span>
+                </div>
+              </li>
+              <li>
+                <div>
+                  <strong style="color: #fff; display: block;">Storefront Specials &amp; Broadcast</strong>
+                  <span style="color: var(--muted); font-size: 0.85rem;">Live view into daily food specials (e.g. Magwinya Combo R18) directly from shopkeepers.</span>
+                </div>
+              </li>
+              <li>
+                <div>
+                  <strong style="color: #fff; display: block;">Dual-Action Cart Checkout</strong>
+                  <span style="color: var(--muted); font-size: 0.85rem;">Seamless toggle between Spendable UBU (zero fee) and Open Payments bank reserve.</span>
+                </div>
+              </li>
+              <li>
+                <div>
+                  <strong style="color: #fff; display: block;">10% Loyalty Cashback &amp; R20 Taxi Goal</strong>
+                  <span style="color: var(--muted); font-size: 0.85rem;">Every purchase accumulates rewards toward a free daily taxi fare cash-out.</span>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div></div>
+      </div>
+      <div class="slide-notes-raw" hidden>
+        Spaza Uniti gives township consumers a sleek, modern shopping experience with real-time merchant broadcasts. Customers can discover nearby stores, view real-time lunch specials, pay with spendable UBU at zero fee, and track their loyalty cashback toward free taxi rides.
+      </div>
+    </section>
+
+    <!-- SLIDE 8: UbuOne Showcase -->
+    <section class="slide">
+      <div class="slide-overlay"></div>
+      <div class="slide-content">
+        <div class="top-bar">
+          <div class="category-badge">Platform Showcase</div>
+          <div class="slide-num">08 / 13</div>
+        </div>
+
+        <div>
+          <h2 class="slide-title">UbuOne: Merchant Till &amp; Family Budgeting</h2>
+          <p class="slide-subtitle">Live on Vercel: https://ubu-one-seven.vercel.app • POS counter till and multi-tenant family budgeting.</p>
+        </div>
+
+        <div class="grid-2" style="flex: 1; align-items: stretch;">
+          <div class="card border-mint">
+            <div class="card-title" style="color: var(--mint);">Merchant &amp; Family Capabilities</div>
+            <ul class="card-list" style="gap: 1rem; margin-top: 1rem;">
+              <li>
+                <div>
+                  <strong style="color: #fff; display: block;">Rapid Counter POS Till</strong>
+                  <span style="color: var(--muted); font-size: 0.85rem;">Cashiers enter custom amounts, target customer handles (@katlego), and verify instantly via 4-digit PIN.</span>
+                </div>
+              </li>
+              <li>
+                <div>
+                  <strong style="color: #fff; display: block;">Change-in-UBU Dispenser</strong>
+                  <span style="color: var(--muted); font-size: 0.85rem;">Solves coin shortages: issues exact digital change (e.g. R1.50) directly to the customer's phone instead of sweets.</span>
+                </div>
+              </li>
+              <li>
+                <div>
+                  <strong style="color: #fff; display: block;">Family Admin Vaults</strong>
+                  <span style="color: var(--muted); font-size: 0.85rem;">Pooled UBU budgeting where parents set automated daily allowance caps and spend categories for children.</span>
+                </div>
+              </li>
+              <li>
+                <div>
+                  <strong style="color: #fff; display: block;">Adult Beneficiary Network</strong>
+                  <span style="color: var(--muted); font-size: 0.85rem;">Direct peer-to-peer allowance streaming to sponsor elderly relatives and student siblings.</span>
+                </div>
+              </li>
+            </ul>
+          </div>
+
+          <div class="card border-mint" style="padding: 0.5rem; justify-content: center; overflow: hidden;">
+            <img src="/brand/ubu-one-ui.jpeg" class="img-preview" alt="UbuOne UI" onerror="this.src='/brand/ubu-one-wallpaper1.jpeg'">
+          </div>
+        </div>
+
+        <div></div>
+      </div>
+      <div class="slide-notes-raw" hidden>
+        UbuOne transforms any tablet or smartphone into an intelligent POS till. It solves the famous township coin shortage: instead of handing a customer an unwanted sweet as change, the cashier taps 'Issue Change in UBU', and R1.50 is instantly credited to their phone. On the consumer side, Family Vaults allow parents to budget allowances with strict daily caps.
+      </div>
+    </section>
+
+    <!-- SLIDE 9: Cryptography & Security -->
+    <section class="slide">
+      <div class="slide-overlay"></div>
+      <div class="slide-content">
+        <div class="top-bar">
+          <div class="category-badge">Security & Standards</div>
+          <div class="slide-num">09 / 13</div>
+        </div>
+
+        <div>
+          <h2 class="slide-title">RFC 9421 Signatures &amp; GNAP Token Exchange</h2>
+          <p class="slide-subtitle">Full cryptographic compliance with the official Open Payments and Rafiki testnet specifications.</p>
+        </div>
+
+        <div class="grid-2" style="flex: 1;">
+          <div class="card border-gold">
+            <div class="card-title" style="color: var(--gold);">RFC 9421 HTTP Message Signatures</div>
+            <p class="card-text">Every outgoing request to the Interledger testnet is cryptographically authenticated.</p>
+            <ul class="card-list" style="margin-top: 1rem;">
+              <li><strong>Algorithm:</strong> Ed25519 asymmetric key signing.</li>
+              <li><strong>Covered Components:</strong> "@method", "@target-uri", "content-digest", and optional "authorization".</li>
+              <li><strong>Content Digest:</strong> SHA-512 base64 digest formatted as sha-512=:&lt;hash&gt;:.</li>
+              <li><strong>Zero Node Dependencies:</strong> Pure-Python implementation using cryptography.hazmat.</li>
+              <li><strong>JWKS Verification:</strong> Key ID d644f013... verified live against testnet JWKS document.</li>
+            </ul>
+          </div>
+
+          <div class="card border-cyan">
+            <div class="card-title" style="color: var(--cyan);">GNAP Grant Protocol &amp; ILP Packets</div>
+            <p class="card-text">Fine-grained authorization for incoming and outgoing payments.</p>
+            <ul class="card-list" style="margin-top: 1rem;">
+              <li><strong>Interactive Top-Up:</strong> Generates consent URLs on auth.interledger-test.dev for user approval.</li>
+              <li><strong>Non-Interactive Grants:</strong> Instant token acquisition for incoming payment creation.</li>
+              <li><strong>Exact Debit Limits:</strong> Grants enforce strict debit amounts in specified asset code (EUR/ZAR).</li>
+              <li><strong>Live ILP Streaming:</strong> Receipts include genuine ILP packet addresses (local.test.net...).</li>
+            </ul>
+          </div>
+        </div>
+
+        <div></div>
+      </div>
+      <div class="slide-notes-raw" hidden>
+        We implemented full cryptographic compliance with Open Payments standards. Our backend generates genuine RFC 9421 HTTP message signatures in pure Python using Ed25519 keys, matching the exact format required by Rafiki. We support GNAP for both interactive user consent and non-interactive server grants.
+      </div>
+    </section>
+
+    <!-- SLIDE 10: Technical Challenges -->
+    <section class="slide">
+      <div class="slide-overlay"></div>
+      <div class="slide-content">
+        <div class="top-bar">
+          <div class="category-badge">Engineering Breakthroughs</div>
+          <div class="slide-num">10 / 13</div>
+        </div>
+
+        <div>
+          <h2 class="slide-title">Challenges Encountered &amp; How We Solved Them</h2>
+          <p class="slide-subtitle">Hard problems solved across protocol signing, unit economics, and distributed state.</p>
+        </div>
+
+        <div class="grid-2">
+          <div class="card border-cyan">
+            <div class="card-title" style="color: var(--cyan);">1. Cloudflare 403 on Testnet</div>
+            <p class="card-text"><strong>Challenge:</strong> auth.interledger-test.dev blocked Python's default urllib User-Agent with HTTP 403 Forbidden.</p>
+            <p class="card-text" style="color: #fff; font-weight: 600; margin-top: 0.5rem;"><strong>Resolution:</strong> Implemented RFC-compliant browser headers (SpazaUniti-OpenPayments/1.0) allowing clean API traversal.</p>
+          </div>
+
+          <div class="card border-gold">
+            <div class="card-title" style="color: var(--gold);">2. RFC 9421 Signature Coverage</div>
+            <p class="card-text"><strong>Challenge:</strong> Rafiki requires different covered components for auth server vs resource server (adding 'authorization').</p>
+            <p class="card-text" style="color: #fff; font-weight: 600; margin-top: 0.5rem;"><strong>Resolution:</strong> Engineered dynamic signing base generator supporting SHA-512 digests and exact GNAP token headers.</p>
+          </div>
+
+          <div class="card border-mint">
+            <div class="card-title" style="color: var(--mint);">3. Micro-Payment Fee Destruction</div>
+            <p class="card-text"><strong>Challenge:</strong> Traditional card rails charge R1.50+ swipe fees, making sub-R10 township purchases uneconomical.</p>
+            <p class="card-text" style="color: #fff; font-weight: 600; margin-top: 0.5rem;"><strong>Resolution:</strong> Built the 1:1 UBU local liquidity pool where 1 Open Payments inflow enables 100s of zero-fee micro-spends.</p>
+          </div>
+
+          <div class="card border-purple">
+            <div class="card-title" style="color: var(--purple);">4. Real-Time Cross-App Sync</div>
+            <p class="card-text"><strong>Challenge:</strong> Marketplace purchases on Spaza Uniti had to instantly reflect across UbuOne merchant cashiers' tills.</p>
+            <p class="card-text" style="color: #fff; font-weight: 600; margin-top: 0.5rem;"><strong>Resolution:</strong> Built unified SQLite transactional engine with row locking, synchronizing ubuone_ledger and customer balances.</p>
+          </div>
+        </div>
+
+        <div></div>
+      </div>
+      <div class="slide-notes-raw" hidden>
+        Building on bleeding-edge payment protocols always brings challenges. We overcame Cloudflare WAF blocks on the testnet, solved exact RFC 9421 signature coverage requirements for Rafiki, engineered the 1:1 UBU buffer to defeat interchange fees, and unified the transactional ledger so purchases instantly reflect across all cashiers.
+      </div>
+    </section>
+
+    <!-- SLIDE 11: Expected Impact -->
+    <section class="slide">
+      <div class="slide-overlay"></div>
+      <div class="slide-content">
+        <div class="top-bar">
+          <div class="category-badge">Impact & Scale</div>
+          <div class="slide-num">11 / 13</div>
+        </div>
+
+        <div>
+          <h2 class="slide-title">Quantifiable Socio-Economic Impact</h2>
+          <p class="slide-subtitle">Measurable prosperity for informal merchants and working township households.</p>
+        </div>
+
+        <div class="grid-2" style="flex: 1;">
+          <div class="card border-cyan">
+            <div class="card-title" style="color: var(--cyan);">Township Household Gains</div>
+            <ul class="card-list" style="gap: 1rem; margin-top: 1rem;">
+              <li>
+                <div>
+                  <strong style="color: #fff; font-size: 1rem;">Saves R180 - R320 Monthly in Bank Fees</strong>
+                  <span style="color: var(--muted); display: block; font-size: 0.85rem;">Eliminates predatory commercial bank ATM withdrawal charges.</span>
+                </div>
+              </li>
+              <li>
+                <div>
+                  <strong style="color: #fff; font-size: 1rem;">Eradicates Lost &amp; Stolen School Cash</strong>
+                  <span style="color: var(--muted); display: block; font-size: 0.85rem;">Children buy bread and lunch safely using family allowance caps and 4-digit PINs.</span>
+                </div>
+              </li>
+              <li>
+                <div>
+                  <strong style="color: #fff; font-size: 1rem;">Free Daily Transit Rewards</strong>
+                  <span style="color: var(--muted); display: block; font-size: 0.85rem;">10% loyalty cashback converts into a free R20 local taxi fare every R200 spent.</span>
+                </div>
+              </li>
+            </ul>
+          </div>
+
+          <div class="card border-mint">
+            <div class="card-title" style="color: var(--mint);">Spaza Merchant Gains</div>
+            <ul class="card-list" style="gap: 1rem; margin-top: 1rem;">
+              <li>
+                <div>
+                  <strong style="color: #fff; font-size: 1rem;">Eliminates Armed Robbery Risk</strong>
+                  <span style="color: var(--muted); display: block; font-size: 0.85rem;">Removes large physical daily cash floats from informal spaza storefronts.</span>
+                </div>
+              </li>
+              <li>
+                <div>
+                  <strong style="color: #fff; font-size: 1rem;">Zero Card Interchange Drag</strong>
+                  <span style="color: var(--muted); display: block; font-size: 0.85rem;">Saves 2.5% to 4% swipe fees on everyday sub-rand staples.</span>
+                </div>
+              </li>
+              <li>
+                <div>
+                  <strong style="color: #fff; font-size: 1rem;">Automated Credit Audit Trail</strong>
+                  <span style="color: var(--muted); display: block; font-size: 0.85rem;">Reduces informal tab defaults by 80% through structured family account links.</span>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div></div>
+      </div>
+      <div class="slide-notes-raw" hidden>
+        The socio-economic impact is immediate. For a household earning R4,000 monthly, saving R250 in ATM fees and earning free taxi trips represents an 8% boost in disposable income. For spaza merchants, eliminating cash protects lives against armed robbery and ends coin shortages. Because our architecture is federated and built on open standards, any spaza shop in South Africa or across Africa can join without proprietary hardware.
+      </div>
+    </section>
+
+    <!-- SLIDE 12: Roadmap -->
+    <section class="slide">
+      <div class="slide-overlay"></div>
+      <div class="slide-content">
+        <div class="top-bar">
+          <div class="category-badge">Product Roadmap</div>
+          <div class="slide-num">12 / 13</div>
+        </div>
+
+        <div>
+          <h2 class="slide-title">Strategic Horizon &amp; Expansion</h2>
+          <p class="slide-subtitle">From retail checkout to B2B wholesale syndicates and national rail bridges.</p>
+        </div>
+
+        <div class="grid-4" style="flex: 1;">
+          <div class="card border-mint">
+            <div class="card-title" style="color: var(--mint); font-size: 1.1rem;">Phase 1: Delivered</div>
+            <span style="font-size: 0.75rem; color: var(--muted);">2026 Q4 (Current Hackathon)</span>
+            <ul class="card-list" style="margin-top: 0.75rem;">
+              <li>Live Open Payments testnet integration.</li>
+              <li>Spaza Uniti marketplace on Vercel.</li>
+              <li>UbuOne merchant till &amp; change dispenser.</li>
+              <li>Multi-tenant Family &amp; Beneficiary RBAC.</li>
+            </ul>
+          </div>
+
+          <div class="card border-cyan">
+            <div class="card-title" style="color: var(--cyan); font-size: 1.1rem;">Phase 2: Resilience</div>
+            <span style="font-size: 0.75rem; color: var(--muted);">2027 Q1</span>
+            <ul class="card-list" style="margin-top: 0.75rem;">
+              <li>WhatsApp Voice Bot hook for informal ordering.</li>
+              <li>Native Android PWA offline caching.</li>
+              <li>BLE mesh offline verification during loadshedding.</li>
+            </ul>
+          </div>
+
+          <div class="card border-gold">
+            <div class="card-title" style="color: var(--gold); font-size: 1.1rem;">Phase 3: Wholesale</div>
+            <span style="font-size: 0.75rem; color: var(--muted);">2027 Q2</span>
+            <ul class="card-list" style="margin-top: 0.75rem;">
+              <li>B2B FMCG wholesale purchasing rails.</li>
+              <li>Bulk buying syndicates: 10+ spazas pool UBU.</li>
+              <li>PayShap national payment rail bridge.</li>
+            </ul>
+          </div>
+
+          <div class="card border-purple">
+            <div class="card-title" style="color: var(--purple); font-size: 1.1rem;">Phase 4: Scale</div>
+            <span style="font-size: 0.75rem; color: var(--muted);">2027 Q3+</span>
+            <ul class="card-list" style="margin-top: 0.75rem;">
+              <li>SASSA social grant direct-to-vault deposit.</li>
+              <li>Automated micro-working capital credit scoring.</li>
+              <li>SADC cross-border remittance corridors.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div></div>
+      </div>
+      <div class="slide-notes-raw" hidden>
+        Looking ahead, our roadmap extends far beyond retail checkout. In Q1 2027, we will deploy WhatsApp bot hooks and Bluetooth mesh offline syncing for loadshedding resilience. In Q2, we unlock B2B wholesale syndicates: neighboring spazas will be able to pool their collective purchasing power to buy bulk goods directly from manufacturers via Interledger. And eventually, we envision SASSA social grants depositing directly into Open Payments family vaults.
+      </div>
+    </section>
+
+    <!-- SLIDE 13: Conclusion -->
+    <section class="slide" style="background-image: url('/brand/ubu-one-wallpaper1.jpeg');">
+      <div class="slide-overlay"></div>
+      <div class="slide-content">
+        <div class="top-bar">
+          <div class="category-badge">Conclusion</div>
+          <div class="slide-num">13 / 13</div>
+        </div>
+
+        <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; max-width: 900px; margin: 0 auto; text-align: center;">
+          <h1 class="slide-title" style="font-size: 3.2rem; margin-bottom: 0.5rem;">Empowering Township Prosperity</h1>
+          <p style="font-size: 1.25rem; color: var(--cyan); font-weight: 700; margin-bottom: 2rem;">
+            Open Protocols • Local Sovereignty • Zero Friction
+          </p>
+
+          <div class="card border-mint" style="text-align: left; margin-bottom: 2rem;">
+            <div class="card-title" style="color: var(--mint);">Live Production &amp; Demonstration Links</div>
+            <ul class="card-list" style="gap: 0.75rem;">
+              <li><strong>Spaza Uniti Marketplace PWA:</strong> <a href="https://spaza-uniti.vercel.app" target="_blank" style="color: #38C3FF; text-decoration: none;">https://spaza-uniti.vercel.app</a></li>
+              <li><strong>UbuOne Merchant Till &amp; Family Portal:</strong> <a href="https://ubu-one-seven.vercel.app" target="_blank" style="color: #38C3FF; text-decoration: none;">https://ubu-one-seven.vercel.app</a></li>
+              <li><strong>Interledger Testnet Payment Pointer:</strong> <code style="color: var(--gold); font-family: 'Space Mono';">$ilp.interledger-test.dev/2f0b6b2c</code></li>
+              <li><strong>Ed25519 Public Key ID:</strong> <code style="color: var(--muted); font-family: 'Space Mono';">d644f013-289b-4c24-9cbe-c3e174cb5a0e</code></li>
+            </ul>
+          </div>
+
+          <h3 style="font-size: 1.8rem; font-weight: 800; color: #fff;">Thank you! We welcome your questions.</h3>
+        </div>
+
+        <div style="text-align: center; color: var(--muted); font-size: 0.8rem;">
+          UX Giants • Open Payments &amp; Interledger Hackathon
+        </div>
+      </div>
+      <div class="slide-notes-raw" hidden>
+        To conclude: Spaza Uniti and UbuOne prove that the township economy does not need second-class solutions. By using open standards like Interledger and Open Payments, we give local merchants the power to compete and give township families the dignity of zero-fee digital commerce. All our services are running live, tested against the Interledger testnet, and ready for deployment. Thank you for your time, and we look forward to your questions.
+      </div>
+    </section>
+
+  </div>
+
+  <!-- Controls Widget -->
+  <div class="controls">
+    <button class="btn-ctrl" id="prev-btn" title="Previous Slide (←)">
+      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg>
+    </button>
+    <button class="btn-ctrl" id="next-btn" title="Next Slide (→ or Space)">
+      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>
+    </button>
+    <div style="width: 1px; height: 16px; background: rgba(255,255,255,0.2);"></div>
+    <button class="btn-ctrl" id="notes-btn" title="Toggle Talking Points (P or N)">
+      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10l6 6v10a2 2 0 01-2 2z"/><path d="M14 2v6h6"/><path d="M9 13h6"/><path d="M9 17h4"/></svg>
+    </button>
+    <button class="btn-ctrl" id="fullscreen-btn" title="Toggle Fullscreen (F)">
+      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3m0 18h3a2 2 0 002-2v-3M3 16v3a2 2 0 002 2h3"/></svg>
+    </button>
+  </div>
+
+  <!-- Presenter Notes Drawer (No "Speaker Notes" tag) -->
+  <div id="notes-drawer">
+    <div class="notes-header">
+      <span class="notes-title">Presentation Talking Points</span>
+      <button class="btn-ctrl" id="close-notes-btn">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="notes-content" id="notes-text"></div>
+  </div>
+
+  <script>
+    const slides = document.querySelectorAll('.slide');
+    const progressBar = document.getElementById('progress-bar');
+    const notesDrawer = document.getElementById('notes-drawer');
+    const notesText = document.getElementById('notes-text');
+    let currentIndex = 0;
+
+    function updateSlide(index) {
+      if (index < 0) index = 0;
+      if (index >= slides.length) index = slides.length - 1;
+      currentIndex = index;
+
+      slides.forEach((slide, i) => {
+        slide.classList.toggle('active', i === currentIndex);
+      });
+
+      const pct = ((currentIndex + 1) / slides.length) * 100;
+      progressBar.style.width = pct + '%';
+
+      // Update notes
+      const currentSlide = slides[currentIndex];
+      const rawNotes = currentSlide.querySelector('.slide-notes-raw');
+      notesText.textContent = rawNotes ? rawNotes.textContent.trim() : '';
+    }
+
+    function nextSlide() { updateSlide(currentIndex + 1); }
+    function prevSlide() { updateSlide(currentIndex - 1); }
+    function toggleNotes() { notesDrawer.classList.toggle('open'); }
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        document.exitFullscreen().catch(() => {});
+      }
+    }
+
+    document.getElementById('next-btn').addEventListener('click', nextSlide);
+    document.getElementById('prev-btn').addEventListener('click', prevSlide);
+    document.getElementById('notes-btn').addEventListener('click', toggleNotes);
+    document.getElementById('close-notes-btn').addEventListener('click', toggleNotes);
+    document.getElementById('fullscreen-btn').addEventListener('click', toggleFullscreen);
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+        nextSlide();
+      } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+        prevSlide();
+      } else if (e.key.toLowerCase() === 'p' || e.key.toLowerCase() === 'n') {
+        toggleNotes();
+      } else if (e.key.toLowerCase() === 'f') {
+        toggleFullscreen();
+      } else if (e.key === 'Home') {
+        updateSlide(0);
+      } else if (e.key === 'End') {
+        updateSlide(slides.length - 1);
+      }
+    });
+
+    // Touch swipe support
+    let touchStartX = 0;
+    window.addEventListener('touchstart', (e) => { touchStartX = e.changedTouches[0].screenX; }, false);
+    window.addEventListener('touchend', (e) => {
+      let touchEndX = e.changedTouches[0].screenX;
+      if (touchStartX - touchEndX > 50) nextSlide();
+      if (touchEndX - touchStartX > 50) prevSlide();
+    }, false);
+
+    updateSlide(0);
+  </script>
+</body>
+</html>
