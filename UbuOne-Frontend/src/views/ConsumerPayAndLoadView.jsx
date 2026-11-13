@@ -288,32 +288,50 @@ export function ConsumerLoadPoolView({ actor, familyOverview, workspace, onRefre
           </div>
 
           <form onSubmit={handleLoad} className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+              <button
+                type="button"
+                onClick={() => setSource('OPEN_PAYMENTS_TESTNET')}
+                className={cn(
+                  'p-3 rounded-xl border text-left cursor-pointer transition-all',
+                  source === 'OPEN_PAYMENTS_TESTNET'
+                    ? 'bg-[#00A2E8]/20 border-[#00A2E8] ring-1 ring-[#00A2E8]/40'
+                    : 'bg-[#0F1735] border-white/10 hover:border-white/20'
+                )}
+              >
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <div className="text-xs font-bold text-white">Live ILP Testnet</div>
+                </div>
+                <div className="text-[10px] font-mono text-[#00A2E8] mt-1">$ilp.testnet/2f0b6b2c</div>
+              </button>
+
               <button
                 type="button"
                 onClick={() => setSource('OPEN_PAYMENTS')}
                 className={cn(
-                  'p-3.5 rounded-xl border text-left cursor-pointer',
+                  'p-3 rounded-xl border text-left cursor-pointer transition-all',
                   source === 'OPEN_PAYMENTS'
-                    ? 'bg-[#00A2E8]/15 border-[#00A2E8]'
-                    : 'bg-[#0F1735] border-white/10'
+                    ? 'bg-[#00A2E8]/20 border-[#00A2E8] ring-1 ring-[#00A2E8]/40'
+                    : 'bg-[#0F1735] border-white/10 hover:border-white/20'
                 )}
               >
-                <div className="text-xs font-bold text-white">External Open Payments Inflow</div>
-                <div className="text-[11px] text-[#9AA7C4] mt-0.5">Bank / Capitec / Salary &rarr; UBU</div>
+                <div className="text-xs font-bold text-white">External Bank Inflow</div>
+                <div className="text-[10px] text-[#9AA7C4] mt-1">Capitec / Salary &rarr; UBU</div>
               </button>
+
               <button
                 type="button"
                 onClick={() => setSource('WALLET_BALANCE')}
                 className={cn(
-                  'p-3.5 rounded-xl border text-left cursor-pointer',
+                  'p-3 rounded-xl border text-left cursor-pointer transition-all',
                   source === 'WALLET_BALANCE'
-                    ? 'bg-[#00A2E8]/15 border-[#00A2E8]'
-                    : 'bg-[#0F1735] border-white/10'
+                    ? 'bg-[#00A2E8]/20 border-[#00A2E8] ring-1 ring-[#00A2E8]/40'
+                    : 'bg-[#0F1735] border-white/10 hover:border-white/20'
                 )}
               >
-                <div className="text-xs font-bold text-white">Convert My ZAR Wallet</div>
-                <div className="text-[11px] text-[#9AA7C4] mt-0.5">Move ZAR into Spendable UBU</div>
+                <div className="text-xs font-bold text-white">Convert ZAR Wallet</div>
+                <div className="text-[10px] text-[#9AA7C4] mt-1">Move ZAR into UBU</div>
               </button>
             </div>
 
