@@ -422,3 +422,4 @@ export function AdultBeneficiariesView({ actor, workspace, prefillHandle, onRefr
     </div>
   )
 }
+
