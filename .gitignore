@@ -42,3 +42,10 @@ Thumbs.db
 
 # Microservices worktrees
 /services/
+
+# Presentation Scripts & Pitch Documents
+pitch.md
+pitch_intro.md
+spaza_uniti.md
+ubuone.md
+
