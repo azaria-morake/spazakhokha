@@ -6,6 +6,16 @@ from datetime import datetime
 
 DB_PATH = os.environ.get("SPAZA_UNITI_DB_PATH", os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "spazauniti.db"))
 
+if os.environ.get("VERCEL"):
+    import shutil
+    tmp_path = "/tmp/spazauniti.db"
+    if not os.path.exists(tmp_path) and os.path.exists(DB_PATH):
+        try:
+            shutil.copyfile(DB_PATH, tmp_path)
+        except Exception:
+            pass
+    DB_PATH = tmp_path
+
 def get_db():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
