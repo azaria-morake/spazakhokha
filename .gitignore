@@ -1,3 +1,11 @@
+# Node.js dependencies & builds
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+.vercel
+**/.vercel
+
 # Environment variables and secrets
 .env
 .env.*
@@ -40,12 +48,8 @@ __pycache__/
 .DS_Store
 Thumbs.db
 
-# Microservices worktrees
-/services/
-
 # Presentation Scripts & Pitch Documents
 pitch.md
 pitch_intro.md
 spaza_uniti.md
 ubuone.md
-
