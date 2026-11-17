@@ -50,6 +50,8 @@ Thumbs.db
 
 # Presentation Scripts & Pitch Documents
 pitch.md
+pitch_*.md
 pitch_intro.md
+pitch_intro_2.md
 spaza_uniti.md
 ubuone.md
